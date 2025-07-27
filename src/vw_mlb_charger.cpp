@@ -185,38 +185,23 @@ void VWMLBClass::TagParams() // To make code portable between standalone (more p
     Param::SetInt(Param::mlb_chr_ChargerFault, charger_status.LAD_ChargerFault);
     Param::SetInt(Param::mlb_chr_OutputVolts, charger_status.HVLM_Output_Voltage_HV);
 
-    //copy over (manually entered) parameters into values to control the charger
-    Param::SetFloat(Param::mlb_chr_VCU_SOC, (Param::GetInt(Param::mlb_chr_SOCx10)));
-    Param::SetFloat(Param::mlb_chr_VCU_SOC_Limit, Param::GetInt(Param::mlb_chr_SOC_Targetx10));
-    Param::SetInt(Param::mlb_chr_VCU_UDCmin, Param::GetInt(Param::mlb_chr_BMSMinVolt));
-    Param::SetInt(Param::mlb_chr_VCU_Current_SP, Param::GetInt(Param::mlb_chr_IDCSetpnt));
-    Param::SetInt(Param::mlb_chr_VCU_Volt_SP, Param::GetInt(Param::mlb_chr_HVDCSetpnt));
-    Param::SetFloat(Param::mlb_chr_BMS_Pack_Voltage, (Param::GetInt(Param::mlb_chr_BMSBattCellSumx10) / 10));
-    Param::SetInt(Param::mlb_chr_VCU_UDCmax, Param::GetInt(Param::mlb_chr_BMSMaxVolt));
-    Param::SetFloat(Param::mlb_chr_BMS_Highest_Cell_Temp, (Param::GetInt(Param::mlb_chr_BMS_Cell_H_Tempx10)) / 10);
-    Param::SetFloat(Param::mlb_chr_BMS_Lowest_Cell_Temp, (Param::GetInt(Param::mlb_chr_BMS_Cell_L_Tempx10)) / 10);
-    Param::SetInt(Param::mlb_chr_BMS_Highest_Cell_Volt, Param::GetInt(Param::mlb_chr_BMS_Cell_H_mV));
-    Param::SetInt(Param::mlb_chr_BMS_Lowest_Cell_Volt, Param::GetInt(Param::mlb_chr_BMS_Cell_L_mV));
-    Param::SetInt(Param::mlb_chr_VCUChargeRequest, Param::GetInt(Param::mlb_chr_Activation_Crg));
-    Param::SetInt(Param::mlb_chr_VehicleLockState, Param::GetInt(Param::mlb_chr_LockSim));
-
-    //copy over the values to control the charger into the internal data structure  
-    battery_status.SOCx10 = (Param::GetInt(Param::mlb_chr_VCU_SOC));
-    battery_status.SOC_Targetx10 = Param::GetInt(Param::mlb_chr_VCU_SOC_Limit);
-    battery_status.BMSMinVolt = Param::GetInt(Param::mlb_chr_VCU_UDCmin);
-    charger_params.IDCSetpnt = Param::GetInt(Param::mlb_chr_VCU_Current_SP);
-    charger_params.HVDCSetpnt = Param::GetInt(Param::mlb_chr_VCU_Volt_SP);
-    battery_status.BMSBattCellSumx10 = Param::GetInt(Param::mlb_chr_BMS_Pack_Voltage);
-    battery_status.BMSMaxVolt = Param::GetInt(Param::mlb_chr_VCU_UDCmax);
-    battery_status.BMS_Cell_H_Tempx10 = Param::GetInt(Param::mlb_chr_BMS_Highest_Cell_Temp) * 10;
-    battery_status.BMS_Cell_L_Tempx10 = Param::GetInt(Param::mlb_chr_BMS_Lowest_Cell_Temp) * 10;
-    battery_status.BMS_Cell_H_mV = Param::GetInt(Param::mlb_chr_BMS_Highest_Cell_Volt);
-    battery_status.BMS_Cell_L_mV = Param::GetInt(Param::mlb_chr_BMS_Lowest_Cell_Volt);
-    mlb_state.ZV_verriegelt_extern_ist = Param::GetInt(Param::mlb_chr_VehicleLockState);
+    //copy parameters directly from user settable simulation values
+    battery_status.SOCx10 = Param::GetInt(Param::mlb_chr_sim_SOC) * 10;
+    battery_status.SOC_Targetx10 = Param::GetInt(Param::mlb_chr_sim_SOC_Target) * 10;
+    battery_status.BMSMinVolt = Param::GetInt(Param::mlb_chr_sim_BMSMinVolt);
+    charger_params.IDCSetpnt = Param::GetInt(Param::mlb_chr_sim_IDCSetpnt);
+    charger_params.HVDCSetpnt = Param::GetInt(Param::mlb_chr_sim_HVDCSetpnt);
+    battery_status.BMSBattCellSumx10 = Param::GetInt(Param::mlb_chr_sim_BMSBattCellSum) * 10;
+    battery_status.BMSMaxVolt = Param::GetInt(Param::mlb_chr_sim_BMSMaxVolt);
+    battery_status.BMS_Cell_H_Tempx10 = Param::GetInt(Param::mlb_chr_sim_BMS_Cell_H_Temp) * 10;
+    battery_status.BMS_Cell_L_Tempx10 = Param::GetInt(Param::mlb_chr_sim_BMS_Cell_L_Temp) * 10;
+    battery_status.BMS_Cell_H_mV = Param::GetInt(Param::mlb_chr_sim_BMS_Cell_H_mV);
+    battery_status.BMS_Cell_L_mV = Param::GetInt(Param::mlb_chr_sim_BMS_Cell_L_mV);
+    mlb_state.ZV_verriegelt_extern_ist = Param::GetInt(Param::mlb_chr_sim_Lock);
 #else
     //normal operation mode with parameters exchange. and reduced parameter set
     battery_status.SOCx10 = int(Param::GetFloat(Param::SOC) * 10);
-    battery_status.SOC_Targetx10 = 1000; // Param::GetInt(Param::mlb_chr_VCU_SOC_Limit);
+    battery_status.SOC_Targetx10 = 1000;
     battery_status.CapkWhx10 = int(Param::GetFloat(Param::BattCap) * 10);
     battery_status.BMSMinVolt = Param::GetInt(Param::udcmin);
     charger_params.HVpwr = Param::GetInt(Param::Pwrspnt);
