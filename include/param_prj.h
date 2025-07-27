@@ -28,7 +28,7 @@
    2. Temporary parameters (id = 0)
    3. Display values
  */
-// Next param id (increase when adding new parameter!): 153
+// Next param id (increase when adding new parameter!): 166
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST                                                         \
     PARAM_ENTRY(CAT_SETUP, Inverter, INVMODES, 0, 8, 0, 5)                 \
@@ -287,34 +287,22 @@
     VALUE_ENTRY(mlb_chr_ChargerWarning, "dig", 2140)                       \
     VALUE_ENTRY(mlb_chr_ChargerFault, "dig", 2141)                         \
     VALUE_ENTRY(mlb_chr_OutputVolts, "V", 2142)                            \
-    VALUE_ENTRY(mlb_chr_VCU_SOC, "%", 2143)                                \
-    VALUE_ENTRY(mlb_chr_VCU_SOC_Limit, "%", 2144)                          \
-    VALUE_ENTRY(mlb_chr_VCU_UDCmin, "V", 2145)                             \
-    VALUE_ENTRY(mlb_chr_VCU_Current_SP, "A", 2146)                         \
-    VALUE_ENTRY(mlb_chr_VCU_Volt_SP, "V", 2147)                            \
-    VALUE_ENTRY(mlb_chr_BMS_Pack_Voltage, "V", 2148)                       \
-    VALUE_ENTRY(mlb_chr_VCU_UDCmax, "V", 2149)                             \
-    VALUE_ENTRY(mlb_chr_BMS_Highest_Cell_Temp, "°C", 2150)                 \
-    VALUE_ENTRY(mlb_chr_BMS_Lowest_Cell_Temp, "°C", 2151)                  \
-    VALUE_ENTRY(mlb_chr_BMS_Highest_Cell_Volt, "mV", 2152)                 \
-    VALUE_ENTRY(mlb_chr_BMS_Lowest_Cell_Volt, "mV", 2153)                  \
-    VALUE_ENTRY(mlb_chr_VCUChargeRequest, "dig", 2154)                     \
-    VALUE_ENTRY(mlb_chr_VehicleLockState, "dig", 2155)                     \
-    VALUE_ENTRY(mlb_chr_SOCx10, "dig", 2156)                               \
-    VALUE_ENTRY(mlb_chr_SOC_Targetx10, "dig", 2157)                        \
-    VALUE_ENTRY(mlb_chr_BMSMinVolt, "V", 2158)                             \
-    VALUE_ENTRY(mlb_chr_IDCSetpnt, "A", 2159)                              \
-    VALUE_ENTRY(mlb_chr_HVDCSetpnt, "V", 2160)                             \
-    VALUE_ENTRY(mlb_chr_BMSBattCellSumx10, "dig", 2161)                    \
-    VALUE_ENTRY(mlb_chr_BMSMaxVolt, "V", 2162)                             \
-    VALUE_ENTRY(mlb_chr_BMS_Cell_H_Tempx10, "dig", 2163)                   \
-    VALUE_ENTRY(mlb_chr_BMS_Cell_L_Tempx10, "dig", 2164)                   \
-    VALUE_ENTRY(mlb_chr_BMS_Cell_H_mV, "mV", 2165)                         \
-    VALUE_ENTRY(mlb_chr_BMS_Cell_L_mV, "mV", 2166)                         \
-    VALUE_ENTRY(mlb_chr_Activation_Crg, "dig", 2167)                       \
-    VALUE_ENTRY(mlb_chr_LockSim, "dig", 2168)
+    /* simulation parameters for standalone charger testing */
+    PARAM_ENTRY(CAT_MLB_SIM, mlb_chr_sim_SOC, "%%", 0, 100, 50, 153) \
+    PARAM_ENTRY(CAT_MLB_SIM, mlb_chr_sim_SOC_Target, "%%", 0, 100, 100, 154) \
+    PARAM_ENTRY(CAT_MLB_SIM, mlb_chr_sim_BMSMinVolt, "V", 0, 1000, 300, 155) \
+    PARAM_ENTRY(CAT_MLB_SIM, mlb_chr_sim_IDCSetpnt, "A", 0, 200, 10, 156) \
+    PARAM_ENTRY(CAT_MLB_SIM, mlb_chr_sim_HVDCSetpnt, "V", 0, 1000, 400, 157) \
+    PARAM_ENTRY(CAT_MLB_SIM, mlb_chr_sim_BMSBattCellSum, "V", 0, 1000, 350, 158) \
+    PARAM_ENTRY(CAT_MLB_SIM, mlb_chr_sim_BMSMaxVolt, "V", 0, 1000, 450, 159) \
+    PARAM_ENTRY(CAT_MLB_SIM, mlb_chr_sim_BMS_Cell_H_Temp, "°C", -40, 100, 25, 160) \
+    PARAM_ENTRY(CAT_MLB_SIM, mlb_chr_sim_BMS_Cell_L_Temp, "°C", -40, 100, 20, 161) \
+    PARAM_ENTRY(CAT_MLB_SIM, mlb_chr_sim_BMS_Cell_H_mV, "mV", 0, 5000, 4200, 162) \
+    PARAM_ENTRY(CAT_MLB_SIM, mlb_chr_sim_BMS_Cell_L_mV, "mV", 0, 5000, 3000, 163) \
+    PARAM_ENTRY(CAT_MLB_SIM, mlb_chr_sim_Activation_Crg, "dig", 0, 1, 0, 164) \
+    PARAM_ENTRY(CAT_MLB_SIM, mlb_chr_sim_Lock, "dig", 0, 1, 0, 165)
 
-// Next value Id: 2169
+// Next value Id: 2143
 
 // Dead params
 /*
@@ -379,6 +367,7 @@
 #define CAT_SHUNT "ISA Shunt Control"
 #define CAT_IOPINS "General Purpose I/O"
 #define CAT_PWM "PWM Control"
+#define CAT_MLB_SIM "MLB Charger Sim"
 #define MotorsAct "0=Mg1and2, 1=Mg1, 2=Mg2, 3=BlendingMG2and1"
 #define PumpOutType "0=GS450hOil, 1=TachoOut, 2=SpeedoOut"
 #define LIMITREASON "0=None, 1=UDClimLow, 2=UDClimHigh, 4=IDClimLow, 8=IDClimHigh, 16=TempLim"
