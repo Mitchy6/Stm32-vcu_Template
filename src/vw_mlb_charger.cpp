@@ -80,15 +80,15 @@ void VWMLBClass::Task100Ms()
 {
     static uint8_t counter100ms = 0;
 
+    TagParams();
+    CalcValues100ms();
+
     // stop CAN chatter when requested
     if (vehicle_status.CANQuiet == 1)
     {
         counter100ms = 0;
         return;
     }
-
-    TagParams();
-    CalcValues100ms();
 
     // called every 100 ms
     counter100ms++;
