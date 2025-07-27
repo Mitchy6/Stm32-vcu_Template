@@ -79,18 +79,24 @@ void VWMLBClass::Task10Ms()
 
 void VWMLBClass::Task100Ms()
 {
-
     static uint8_t counter100ms = 0;
-    TagParams();
-    CalcValues100ms();
-    counter100ms++; // Increments every 100ms
+
+    // stop CAN chatter when requested
     if (vehicle_status.CANQuiet == 1)
     {
         counter100ms = 0;
-    } // Quick way of silencing the canbus -- NOT IMPLEMENTED
-    // - Do 100ms Tasks:
+        return;
+    }
+
+    TagParams();
+    CalcValues100ms();
+
+    // called every 100 ms
+    counter100ms++;
+
+    // --- 100 ms tasks ---
     if (counter100ms % 1 == 0)
-    {             // Every 100ms (100ms * 2)
+    {
         msg3C0(); //  Klemmen_Status_01   CRC
         msg503(); // HVK_01     0x503     CRC
         msg184(); // ZV_01    0x184       CRC
@@ -101,21 +107,26 @@ void VWMLBClass::Task100Ms()
         msg552();
         msg5AC();
     }
-    // - Do 200ms, 500ms, 1000ms and 2000ms tasks:
+
+    // --- 200 ms tasks ---
     if (counter100ms % 2 == 0)
-    {             // Every 200ms (100ms * 2)
+    {
         msg1A2(); // ESP_15   0x1A2       CRC
         msg583();
     }
+
+    // --- 500 ms tasks ---
     if (counter100ms % 5 == 0)
-    {             // Every 500ms (100ms * 5)
+    {
         msg5A2(); // BMS_04   0x5A2       CRC
         msg5CA(); // BMS_07   0x5CA       CRC
         msg5CD(); // DCDC_03    0x5CD     CRC
         msg59E();
     }
+
+    // --- 1000 ms tasks ---
     if (counter100ms % 10 == 0)
-    { // Every 1000ms (100ms * 10)
+    {
         msg485();
         msg1A555548();
         msg1A5555AD();
@@ -123,10 +134,12 @@ void VWMLBClass::Task100Ms()
         msg9A555539();
         msg9A555552();
     }
+
+    // --- 2000 ms tasks ---
     if (counter100ms % 20 == 0)
-    { // Every 2000ms (100ms * 20)
+    {
         msg96A954A6();
-        counter100ms = 1;
+        counter100ms = 0;
     }
 }
 
