@@ -276,7 +276,6 @@ private:
       uint16_t BMS_SOC_Kaltstart = 0;
       uint8_t BMS_max_Grenz_SOC = 30;
       uint8_t BMS_min_Grenz_SOC = 15;
-      uint8_t EM1_Istmodus2;
       uint8_t EM1_Status_Spgfreiheit;
       bool ZAS_Kl_S;
       bool ZAS_Kl_15;
@@ -284,7 +283,6 @@ private:
       bool ZAS_Kl_50_Startanforderung;
       uint8_t HVActiveDelayOff;
       uint8_t HVEM_NVNachladen_Energie = 200;
-      uint8_t LockState;
 };
 
 #endif /* vw_mlb_charger_h */
