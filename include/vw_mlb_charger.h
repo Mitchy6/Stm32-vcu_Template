@@ -136,6 +136,29 @@ public:
 
 
 private:
+      static constexpr uint32_t ID_ZV_01  = 0x184;
+      static constexpr uint32_t ID_BMS_01 = 0x191;
+      static constexpr uint32_t ID_BMS_02 = 0x1A1;
+      static constexpr uint32_t ID_BMS_03 = 0x39D;
+      static constexpr uint32_t ID_DCDC_01 = 0x2AE;
+      static constexpr uint32_t ID_BMS_10 = 0x509;
+      static constexpr uint32_t ID_HVK_01 = 0x503;
+      static constexpr uint32_t ID_BMS_DC_01 = 0x578;
+      static constexpr uint32_t ID_HVEM_05 = 0x552;
+      static constexpr uint32_t ID_ZV_02  = 0x583;
+      static constexpr uint32_t ID_BMS_04 = 0x5A2;
+      static constexpr uint32_t ID_BMS_06 = 0x59E;
+      static constexpr uint32_t ID_BMS_07 = 0x5CA;
+      static constexpr uint32_t ID_DCDC_03 = 0x5CD;
+      static constexpr uint32_t ID_HVEM_02 = 0x5AC;
+      static constexpr uint32_t ID_NAVDATA_02 = 0x485;
+      static constexpr uint32_t ID_ORU_01 = 0x1A555548;
+      static constexpr uint32_t ID_AUTHENTIC_TIME_01 = 0x1A5555AD;
+      static constexpr uint32_t ID_BMS_09 = 0x96A955EB;
+      static constexpr uint32_t ID_BMS_11 = 0x96A954A6;
+      static constexpr uint32_t ID_BMS_16 = 0x9A555539;
+      static constexpr uint32_t ID_BMS_27 = 0x9A555552;
+      static constexpr uint32_t ID_ESP_15 = 0x1A2;
       //void CommandStates();
       void Simulate();
       void TagParams();
