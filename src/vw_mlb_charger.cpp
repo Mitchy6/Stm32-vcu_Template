@@ -270,6 +270,20 @@ void VWMLBClass::TagParams() // To make code portable between standalone (more p
 
 void VWMLBClass::CalcValues100ms() // Run to calculate values every 100 ms
 {
+    // BMS charge current limit but needs to be power for most AC charger types.
+    if (charger_params.HVcur > 1000)
+    {
+        charger_params.calcpwr = 12000;
+    }
+    else
+    {
+        charger_params.calcpwr = charger_params.HVcur * (battery_status.BMSVoltx10 / 10);
+    }
+
+    charger_params.HVpwr = MIN(charger_params.HVpwr, charger_params.calcpwr);
+
+    charger_params.IDCSetpnt = charger_params.HVpwr / (battery_status.BMSVoltx10 / 10);
+
     emulateMLB();
 }
 
@@ -286,20 +300,6 @@ void VWMLBClass::emulateMLB()
     mlb_state.BMS_ChargePowerMax = 625;
     mlb_state.BMS_ChargeEnergyCount = 0;
     mlb_state.BMS_EnergyCount = 0;
-
-    // BMS charge current limit but needs to be power for most AC charger types.
-    if (charger_params.HVcur > 1000)
-    {
-        charger_params.calcpwr = 12000;
-    }
-    else
-    {
-        charger_params.calcpwr = charger_params.HVcur * (battery_status.BMSVoltx10 / 10);
-    }
-
-    charger_params.HVpwr = MIN(charger_params.HVpwr, charger_params.calcpwr);
-
-    charger_params.IDCSetpnt = charger_params.HVpwr / (battery_status.BMSVoltx10 / 10);
 
     // BMS SOC:
     mlb_state.BMS_Batt_Curr = charger_status.current + 2047;
