@@ -66,7 +66,7 @@ void VWMLBClass::Task10Ms()
     if (counter10ms % 4 == 0)
     {
         // msg040(); // Airbag_01 - 0x40     CRC
-        can->Send(0x2B1, MSG_TME_02, 8); // MSG_TME_02   0x2B1
+        msg2B1();
     }
 
     // --- 50 ms tasks ---
@@ -670,6 +670,11 @@ void VWMLBClass::msg1A1() // BMS_02 0x1A1
     buf[7] = (BMS_Min_Batt_Volt_Charge >> 2) & 0xFF;
     buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_02);
     can->Send(ID_BMS_02, buf, 8);
+}
+
+void VWMLBClass::msg2B1() // MSG_TME_02   0x2B1
+{
+    can->Send(0x2B1, MSG_TME_02, 8);
 }
 
 void VWMLBClass::msg39D() // BMS_03 0x39D
