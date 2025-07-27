@@ -18,6 +18,8 @@
  */
 
 #include <vw_mlb_charger.h>
+#include "params.h"
+
 #define MLB_CHARGER_STANDALONE
 
 bool VWMLBClass::ControlCharge(bool RunCh, bool ACReq)
@@ -192,7 +194,7 @@ void VWMLBClass::TagParams() // To make code portable between standalone (more p
     Param::SetFloat(Param::mlb_chr_BMS_Lowest_Cell_Temp, (Param::GetInt(Param::mlb_chr_BMS_Cell_L_Tempx10)) / 10);
     Param::SetInt(Param::mlb_chr_BMS_Highest_Cell_Volt, Param::GetInt(Param::mlb_chr_BMS_Cell_H_mV));
     Param::SetInt(Param::mlb_chr_BMS_Lowest_Cell_Volt, Param::GetInt(Param::mlb_chr_BMS_Cell_L_mV));
-    Param::SetInt(Param::mlb_chr_VCUChargeRequest, Param::Ge | tInt(Param::mlb_chr_Activation_Crg));
+    Param::SetInt(Param::mlb_chr_VCUChargeRequest, Param::GetInt(Param::mlb_chr_Activation_Crg));
     Param::SetInt(Param::mlb_chr_VehicleLockState, Param::GetInt(Param::mlb_chr_LockSim));
 
     battery_status.SOCx10 = (Param::GetInt(Param::mlb_chr_VCU_SOC));
