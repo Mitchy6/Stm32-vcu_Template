@@ -97,6 +97,7 @@ struct ChargerControl {
     uint16_t calcpwr = 0;
     uint8_t modeSet;
     bool activate;
+    uint8_t HVActiveDelayOff;
 };
 
 struct BatteryStatus {
@@ -281,8 +282,9 @@ private:
       bool ZAS_Kl_15;
       bool ZAS_Kl_X;
       bool ZAS_Kl_50_Startanforderung;
-      uint8_t HVActiveDelayOff;
       uint8_t HVEM_NVNachladen_Energie = 200;
+
+      
 };
 
 #endif /* vw_mlb_charger_h */

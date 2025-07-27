@@ -24,7 +24,6 @@
 
 bool VWMLBClass::ControlCharge(bool RunCh, bool ACReq)
 {
-    (void)ACReq; // ACReq is currently unused
     if (charger_status.HVLM_Plug_Status > 1 && RunCh)
     {
         charger_params.activate = 1;
@@ -151,6 +150,7 @@ void VWMLBClass::TagParams() // To make code portable between standalone (more p
     // it is used for testing, and if the vcu should be used only to manage the charger
     // it can be dangerous, because because e.g. single cell values arent considered
 
+    //copy charger state into values
     Param::SetInt(Param::mlb_chr_DC_Max_ChargePower, charger_status.HVLM_MaxDC_ChargePower);
     Param::SetInt(Param::mlb_chr_DC_Max_ChargeVoltage, charger_status.HVLM_Max_DC_Voltage_DCLS);
     Param::SetInt(Param::mlb_chr_DC_Actual_Current, charger_status.HVLM_Actual_DC_Current_DCLS);
@@ -184,6 +184,7 @@ void VWMLBClass::TagParams() // To make code portable between standalone (more p
     Param::SetInt(Param::mlb_chr_ChargerFault, charger_status.LAD_ChargerFault);
     Param::SetInt(Param::mlb_chr_OutputVolts, charger_status.HVLM_Output_Voltage_HV);
 
+    //copy over (manually entered) parameters into values to control the charger
     Param::SetFloat(Param::mlb_chr_VCU_SOC, (Param::GetInt(Param::mlb_chr_SOCx10)));
     Param::SetFloat(Param::mlb_chr_VCU_SOC_Limit, Param::GetInt(Param::mlb_chr_SOC_Targetx10));
     Param::SetInt(Param::mlb_chr_VCU_UDCmin, Param::GetInt(Param::mlb_chr_BMSMinVolt));
@@ -198,6 +199,7 @@ void VWMLBClass::TagParams() // To make code portable between standalone (more p
     Param::SetInt(Param::mlb_chr_VCUChargeRequest, Param::GetInt(Param::mlb_chr_Activation_Crg));
     Param::SetInt(Param::mlb_chr_VehicleLockState, Param::GetInt(Param::mlb_chr_LockSim));
 
+    //copy over the values to control the charger into the internal data structure  
     battery_status.SOCx10 = (Param::GetInt(Param::mlb_chr_VCU_SOC));
     battery_status.SOC_Targetx10 = Param::GetInt(Param::mlb_chr_VCU_SOC_Limit);
     battery_status.BMSMinVolt = Param::GetInt(Param::mlb_chr_VCU_UDCmin);
@@ -360,22 +362,22 @@ void VWMLBClass::CalcValues100ms() // Run to calculate values every 100 ms
         BMS_HV_Status = 2; // HV System Voltage Detected  // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
         HVK_MO_EmSollzustand = 50;
         BMS_Charger_Active = 1;
-        HVActiveDelayOff = 20;
+        charger_params.HVActiveDelayOff = 20;
     }
 
     if (charger_status.HVLM_HV_ActivationRequest == 0)
     {
         BMS_Charger_Active = 0;
-        if (HVActiveDelayOff >= 1)
+        if (charger_params.HVActiveDelayOff >= 1)
         {
             BMS_HV_Status = 2; // HV No Voltage // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
             BMS_IstModus = 1;  // 0=Standby, 1=HV Active (Driving) 2=Balancing 4=AC charge, 6=DC charge, 7=init
             HVK_BMS_Sollmodus = 1;
             HVK_MO_EmSollzustand = 67;
-            HVActiveDelayOff = HVActiveDelayOff - 1;
+            charger_params.HVActiveDelayOff = charger_params.HVActiveDelayOff - 1;
         }
 
-        if (HVActiveDelayOff == 0)
+        if (charger_params.HVActiveDelayOff == 0)
         {
             //   HV_Bordnetz_aktiv = false; // Indicates an active high-voltage vehicle electrical system: 0 = Not Active,  1 = Active
             //   BMS_HV_Status = 1; // HV No Voltage // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
@@ -674,8 +676,7 @@ void VWMLBClass::msg1A1() // BMS_02 0x1A1
 
 void VWMLBClass::msg2B1() // MSG_TME_02   0x2B1
 {
-    uint8_t buf[8]{};
-    can->Send(0x2B1, buf, 8);
+    can->Send(0x2B1, MSG_TME_02, 8);
 }
 
 void VWMLBClass::msg39D() // BMS_03 0x39D
@@ -763,7 +764,7 @@ void VWMLBClass::msg485() // NavData_02 0x485
 void VWMLBClass::msg1A555548() // ORU_01 0x1A555548
 {
     uint8_t buf[8]{};
-    buf[0] = vag_utils::vw_crc_calc(buf, 8, static_cast<uint16_t>(ID_ORU_01));
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_ORU_01);
     can->Send(ID_ORU_01, buf, 8);
 }
 
@@ -774,7 +775,7 @@ void VWMLBClass::msg1A5555AD() // Authentic_Time_01 0x1A5555AD
     buf[5] = (UnixTime >> 8) & 0xFF;
     buf[6] = (UnixTime >> 16) & 0xFF;
     buf[7] = (UnixTime >> 24) & 0xFF;
-    buf[0] = vag_utils::vw_crc_calc(buf, 8, static_cast<uint16_t>(ID_AUTHENTIC_TIME_01));
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_AUTHENTIC_TIME_01);
     can->Send(ID_AUTHENTIC_TIME_01, buf, 8);
 }
 
@@ -787,7 +788,7 @@ void VWMLBClass::msg96A955EB() // BMS_09 0x96A955EB
     buf[5] = ((BMS_Kapazitaet >> 8) & 0x07) | ((BMS_SOC_Kaltstart & 0x1F) << 3);
     buf[6] = ((BMS_SOC_Kaltstart >> 5) & 0x3F) | ((BMS_max_Grenz_SOC & 0x03) << 6);
     buf[7] = ((BMS_max_Grenz_SOC >> 2) & 0x07) | ((BMS_min_Grenz_SOC & 0x1F) << 3);
-    buf[0] = vag_utils::vw_crc_calc(buf, 8, static_cast<uint16_t>(ID_BMS_09));
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_09);
     can->Send(ID_BMS_09, buf, 8);
 }
 
@@ -799,14 +800,14 @@ void VWMLBClass::msg96A954A6() // BMS_11 0x96A954A6
     buf[5] = BMS_BattCell_MV_Max & 0xFF;
     buf[6] = ((BMS_BattCell_MV_Max >> 8) & 0x0F) | ((BMS_BattCell_MV_Min & 0x0F) << 4);
     buf[7] = (BMS_BattCell_MV_Min >> 4) & 0xFF;
-    buf[0] = vag_utils::vw_crc_calc(buf, 8, static_cast<uint16_t>(ID_BMS_11));
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_11);
     can->Send(ID_BMS_11, buf, 8);
 }
 
 void VWMLBClass::msg9A555539() // BMS_16 0x9A555539
 {
     uint8_t buf[8]{};
-    buf[0] = vag_utils::vw_crc_calc(buf, 8, static_cast<uint16_t>(ID_BMS_16));
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_16);
     can->Send(ID_BMS_16, buf, 8);
 }
 
@@ -819,6 +820,6 @@ void VWMLBClass::msg9A555552() // BMS_27 0x9A555552
     buf[5] = (BMS_EnergyReq_Full >> 3) & 0xFF;
     buf[6] = BMS_ChargePowerMax & 0xFF;
     buf[7] = ((BMS_ChargePowerMax >> 8) & 0x0F) | ((BMS_ChargeEnergyCount & 0x0F) << 4);
-    buf[0] = vag_utils::vw_crc_calc(buf, 8, static_cast<uint16_t>(ID_BMS_27));
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_27);
     can->Send(ID_BMS_27, buf, 8);
 }
