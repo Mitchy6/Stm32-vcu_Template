@@ -101,20 +101,20 @@ struct ChargerControl {
 };
 
 struct BatteryStatus {
-    uint16_t SOCx10;
-    uint16_t SOC_Targetx10;
-    uint16_t CapkWhx10;
-    uint16_t BattkWhx10;
-    uint16_t BMSVoltx10;
-    uint16_t BMSCurrx10;
-    uint16_t BMSMaxVolt;
-    uint16_t BMSMinVolt;
-    uint16_t BMSMaxChargeCurr;
+    uint16_t SOCx10;         // SOC of battery, with implied decimal place
+    uint16_t SOC_Targetx10;  // target SOC of battery, with implied decimal place
+    uint16_t CapkWhx10;      // usable energy content of the HV battery
+    uint16_t BattkWhx10;     // current energy content of the HV battery
+    uint16_t BMSVoltx10;     // BMS voltage of battery
+    uint16_t BMSCurrx10;     // BMS current of battery, with implied decimal place
+    uint16_t BMSMaxVolt;     // BMS maximum battery voltage
+    uint16_t BMSMinVolt;     // BMS minimum battery voltage
+    uint16_t BMSMaxChargeCurr;  // BMS maximum charge current
     uint16_t BMSBattCellSumx10;
     uint16_t BMSCellAhx10 = 1080;
-    uint8_t HV_Status;
-    uint8_t BMS_Status;
-    uint8_t BMS_Mode;
+    uint8_t HV_Status;       // 0=Init (no function), 1=BMS HV free (<20V), 2=BMS HV active (>=25V), 3=Error
+    uint8_t BMS_Status;      // 0 "Component_OK" 1 "Limited_CompFct_Isoerror_I" 2 "Limited_CompFct_Isoerror_II" 3 "Limited_CompFct_Interlock" 4 "Limited_CompFct_SD" 5 "Limited_CompFct_Powerred" 6 "No_component_function" 7 "Init"
+    uint8_t BMS_Mode;        // 0 "HV_Off" 1 "Driving HV Active" 2 "Balancing" 3 "External Charger" 4 "AC Charging" 5 "Battery Fault" 6 "DC Charging" 7 "Init"
     uint16_t BMS_Battery_Tempx10 = 242;
     uint16_t BMS_Coolant_Tempx10 = 201;
     uint16_t BMS_Cell_H_Tempx10 = 290;
@@ -168,11 +168,11 @@ struct MLB_State {
     uint8_t HMS_Systemstatus{};
     uint8_t HMS_aktives_System{};
     bool HMS_Fehlerstatus{};
-    uint8_t HVK_HVLM_Sollmodus{};
-    bool HV_Bordnetz_aktiv{};
-    uint8_t HVK_MO_EmSollzustand{};
-    uint8_t HVK_BMS_Sollmodus{};
-    uint8_t HVK_DCDC_Sollmodus{};
+    uint8_t HVK_HVLM_Sollmodus{}; // requested target mode of the charging manager: 0=Not Enabled, 1=Enabled
+    bool HV_Bordnetz_aktiv{};     // high-voltage vehicle electrical system active: 0=Not Active, 1=Active
+    uint8_t HVK_MO_EmSollzustand{}; // 0 "HvOff" 1 "HvStbyReq" 2 "HvStbyWait" 3 "HvBattOnReq" 4 "HvBattOnWait" 10 "HvOnIdle" 20 "HvOnDrvRdy" 46 "HvAcChPreReq" 47 "HvAcChPreWait" 48 "HvAcChReq" 49 "HvDcChWait" 50 "HvDcCh" 56 "HvDcChPreReq" 57 "HvDcChPreWait" 58 "HvDcChReq" 59 "HvDcChWait" 60 "HvDcCh" 67 "HvChOffReq" 68 "HvChOffWait" 69 "HvOnIdleReq" 70 "HvOnIdleWait" 96 "HvCpntOffReq" 97 "HvCpntOffWait" 98 "HvBattOffReq" 99 "HvBattOffWait" 119 "HvElmOffReq" 120 "HvElmOff"
+    uint8_t HVK_BMS_Sollmodus{};    // BMS requested mode: 0 "HV_Off" 1 "HV_On" 3 "AC_Charging_ext" 4 "AC_Charging" 6 "DC_Charging" 7 "Init"
+    uint8_t HVK_DCDC_Sollmodus{};   // DC/DC requested mode: 0 "Standby" 1 "HV_On_Precharging" 2 "Step down" 3 "Step up" 4 "Test pulse_12V" 7 "Initialization"
     bool ZV_FT_verriegeln{};
     bool ZV_FT_entriegeln{};
     bool ZV_BT_verriegeln{};
@@ -188,19 +188,19 @@ struct MLB_State {
     uint8_t HVK_Gesamtst_Spgfreiheit{};
     uint8_t BMS_Balancing_Active{2};
     uint8_t BMS_Freig_max_Perf{1};
-    uint8_t BMS_Battdiag{1};
+    uint8_t BMS_Battdiag{1};       // battery display diagnostics: 1=Display Battery, 4=Battery OK, 5=Charging, 6=Check Battery
     uint8_t DC_IstModus_02{2};
-    uint8_t BMS_HV_Auszeit_Status{1};
-    uint16_t BMS_HV_Auszeit{25};
-    uint16_t BMS_Kapazitaet{1000};
-    uint16_t BMS_SOC_Kaltstart{};
-    uint8_t BMS_max_Grenz_SOC{30};
-    uint8_t BMS_min_Grenz_SOC{15};
-    uint8_t EM1_Status_Spgfreiheit{};
-    bool ZAS_Kl_S{};
-    bool ZAS_Kl_15{};
-    bool ZAS_Kl_X{};
-    bool ZAS_Kl_50_Startanforderung{};
+    uint8_t BMS_HV_Auszeit_Status{1}; // status HV timeout
+    uint16_t BMS_HV_Auszeit{25};      // time since last HV activity
+    uint16_t BMS_Kapazitaet{1000};    // total energy capacity (aged)
+    uint16_t BMS_SOC_Kaltstart{};     // SOC cold
+    uint8_t BMS_max_Grenz_SOC{30};    // upper limit of SOC operating strategy (70 offset -> 30 = 100)
+    uint8_t BMS_min_Grenz_SOC{15};    // lower limit of SOC operating strategy
+    uint8_t EM1_Status_Spgfreiheit{};    // voltage status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
+    bool ZAS_Kl_S{};                    // key switch inserted
+    bool ZAS_Kl_15{};                   // accessory position
+    bool ZAS_Kl_X{};                    // run position
+    bool ZAS_Kl_50_Startanforderung{};   // start request
     uint8_t HVEM_NVNachladen_Energie{200};
 };
 
