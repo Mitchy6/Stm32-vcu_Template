@@ -22,6 +22,7 @@
 
 #define MLB_CHARGER_STANDALONE
 
+
 bool VWMLBClass::ControlCharge(bool RunCh, bool ACReq)
 {
     if (charger_status.HVLM_Plug_Status > 1 && RunCh)
@@ -211,7 +212,7 @@ void VWMLBClass::TagParams() // To make code portable between standalone (more p
     battery_status.BMS_Cell_L_Tempx10 = Param::GetInt(Param::mlb_chr_BMS_Lowest_Cell_Temp) * 10;
     battery_status.BMS_Cell_H_mV = Param::GetInt(Param::mlb_chr_BMS_Highest_Cell_Volt);
     battery_status.BMS_Cell_L_mV = Param::GetInt(Param::mlb_chr_BMS_Lowest_Cell_Volt);
-    ZV_verriegelt_extern_ist = Param::GetInt(Param::mlb_chr_VehicleLockState);
+    mlb_state.ZV_verriegelt_extern_ist = Param::GetInt(Param::mlb_chr_VehicleLockState);
 #else
     //normal operation mode with parameters exchange. and reduced parameter set
     battery_status.SOCx10 = int(Param::GetFloat(Param::SOC) * 10);
@@ -269,17 +270,22 @@ void VWMLBClass::TagParams() // To make code portable between standalone (more p
 
 void VWMLBClass::CalcValues100ms() // Run to calculate values every 100 ms
 {
+    emulateMLB();
+}
+
+void VWMLBClass::emulateMLB()
+{
     // Static Set Values - TODO: Roll these up into the CAN msg and eliminate useless variables
-    BMS_MaxDischarge_Curr = 1500;
-    BMS_MaxCharge_Curr_Offset = 0;
-    BMS_Status_ServiceDisconnect = 0;
-    BMS_Battdiag = 0;
-    BMS_BattEnergy_Wh_HiRes = 0;
-    BMS_MaxBattEnergy_Wh_HiRes = 0;
-    BMS_ResidualEnergy_Wh = 0;
-    BMS_ChargePowerMax = 625;
-    BMS_ChargeEnergyCount = 0;
-    BMS_EnergyCount = 0;
+    mlb_state.BMS_MaxDischarge_Curr = 1500;
+    mlb_state.BMS_MaxCharge_Curr_Offset = 0;
+    mlb_state.BMS_Status_ServiceDisconnect = 0;
+    mlb_state.BMS_Battdiag = 0;
+    mlb_state.BMS_BattEnergy_Wh_HiRes = 0;
+    mlb_state.BMS_MaxBattEnergy_Wh_HiRes = 0;
+    mlb_state.BMS_ResidualEnergy_Wh = 0;
+    mlb_state.BMS_ChargePowerMax = 625;
+    mlb_state.BMS_ChargeEnergyCount = 0;
+    mlb_state.BMS_EnergyCount = 0;
 
     // BMS charge current limit but needs to be power for most AC charger types.
     if (charger_params.HVcur > 1000)
@@ -296,131 +302,126 @@ void VWMLBClass::CalcValues100ms() // Run to calculate values every 100 ms
     charger_params.IDCSetpnt = charger_params.HVpwr / (battery_status.BMSVoltx10 / 10);
 
     // BMS SOC:
-    BMS_Batt_Curr = charger_status.current + 2047;
-    BMS_SOC = battery_status.SOCx10 * .05;
-    BMS_SOC_HiRes = battery_status.SOCx10 * 2;
-    BMS_SOC_Kaltstart = battery_status.SOCx10 * 2;
-    BMS_Batt_Energy = battery_status.CapkWhx10 * 2;
-
-    // BMS Current:
+    mlb_state.BMS_Batt_Curr = charger_status.current + 2047;
+    mlb_state.BMS_SOC = battery_status.SOCx10 * .05;
+    mlb_state.BMS_SOC_HiRes = battery_status.SOCx10 * 2;
+    mlb_state.BMS_SOC_Kaltstart = battery_status.SOCx10 * 2;
+    mlb_state.BMS_Batt_Energy = battery_status.CapkWhx10 * 2;
 
     // BMS Voltages:
-    BMS_Batt_Volt = battery_status.BMSVoltx10 * 4;
-    BMS_Batt_Volt_HVterm = battery_status.BMSVoltx10 * 2;
-    BMS_BattCell_MV_Max = battery_status.BMS_Cell_H_mV - 1000;
-    BMS_BattCell_MV_Min = battery_status.BMS_Cell_L_mV - 1000;
+    mlb_state.BMS_Batt_Volt = battery_status.BMSVoltx10 * 4;
+    mlb_state.BMS_Batt_Volt_HVterm = battery_status.BMSVoltx10 * 2;
+    mlb_state.BMS_BattCell_MV_Max = battery_status.BMS_Cell_H_mV - 1000;
+    mlb_state.BMS_BattCell_MV_Min = battery_status.BMS_Cell_L_mV - 1000;
 
     // BMS Temps:
-    BMS_Batt_Temp = (battery_status.BMS_Battery_Tempx10 + 400) / 5;
-    BMS_CurrBatt_Temp = (battery_status.BMS_Battery_Tempx10 + 400) / 5;
-    BMS_CoolantTemp_Act = (battery_status.BMS_Coolant_Tempx10 + 400) / 5;
-    BMS_BattCell_Temp_Max = (battery_status.BMS_Cell_H_Tempx10 + 400) / 5;
-    BMS_BattCell_Temp_Min = (battery_status.BMS_Cell_L_Tempx10 + 400) / 5;
+    mlb_state.BMS_Batt_Temp = (battery_status.BMS_Battery_Tempx10 + 400) / 5;
+    mlb_state.BMS_CurrBatt_Temp = (battery_status.BMS_Battery_Tempx10 + 400) / 5;
+    mlb_state.BMS_CoolantTemp_Act = (battery_status.BMS_Coolant_Tempx10 + 400) / 5;
+    mlb_state.BMS_BattCell_Temp_Max = (battery_status.BMS_Cell_H_Tempx10 + 400) / 5;
+    mlb_state.BMS_BattCell_Temp_Min = (battery_status.BMS_Cell_L_Tempx10 + 400) / 5;
 
     // BMS SOC Limits:
-    BMS_Max_Wh = battery_status.CapkWhx10 * 2;
-    BMS_SOC_ChargeLim = battery_status.SOC_Targetx10 / 10;
-    BMS_max_Grenz_SOC = (battery_status.SOC_Targetx10 - 700) / 10;
-    BMS_EnergyReq_Full = ((battery_status.SOC_Targetx10 - battery_status.SOCx10) * battery_status.CapkWhx10) / 2500;
+    mlb_state.BMS_Max_Wh = battery_status.CapkWhx10 * 2;
+    mlb_state.BMS_SOC_ChargeLim = battery_status.SOC_Targetx10 / 10;
+    mlb_state.BMS_max_Grenz_SOC = (battery_status.SOC_Targetx10 - 700) / 10;
+    mlb_state.BMS_EnergyReq_Full = ((battery_status.SOC_Targetx10 - battery_status.SOCx10) * battery_status.CapkWhx10) / 2500;
 
     // BMS Limits Discharge:
-    BMS_Min_Batt_Volt = battery_status.BMSMinVolt;
-    BMS_Min_Batt_Volt_Discharge = battery_status.BMSMinVolt;
+    mlb_state.BMS_Min_Batt_Volt = battery_status.BMSMinVolt;
+    mlb_state.BMS_Min_Batt_Volt_Discharge = battery_status.BMSMinVolt;
 
     // BMS Limits Charge:
-    BMS_MaxCharge_Curr = 1500;
-    HVEM_SollStrom_HV = (charger_params.IDCSetpnt + 205) * 5;
-    BMS_Batt_Max_Volt = charger_params.HVDCSetpnt;
-    BMS_Min_Batt_Volt_Charge = battery_status.BMSMinVolt;
-    ;
-    BMS_OpenCircuit_Volts = battery_status.BMSBattCellSumx10;
-    HVEM_MaxSpannung_HV = battery_status.BMSMaxVolt;
-    BMS_Faultstatus = battery_status.BMS_Status;
-    BMS_Batt_Ah = (battery_status.CapkWhx10 * 100) / 350;
-    BMS_Target_SOC_HiRes = battery_status.SOC_Targetx10 * 2;
+    mlb_state.BMS_MaxCharge_Curr = 1500;
+    mlb_state.HVEM_SollStrom_HV = (charger_params.IDCSetpnt + 205) * 5;
+    mlb_state.BMS_Batt_Max_Volt = charger_params.HVDCSetpnt;
+    mlb_state.BMS_Min_Batt_Volt_Charge = battery_status.BMSMinVolt;
+    mlb_state.BMS_OpenCircuit_Volts = battery_status.BMSBattCellSumx10;
+    mlb_state.HVEM_MaxSpannung_HV = battery_status.BMSMaxVolt;
+    mlb_state.BMS_Faultstatus = battery_status.BMS_Status;
+    mlb_state.BMS_Batt_Ah = (battery_status.CapkWhx10 * 100) / 350;
+    mlb_state.BMS_Target_SOC_HiRes = battery_status.SOC_Targetx10 * 2;
 
     // ESP15
-    HMS_Systemstatus = 3;   // 0 "No_function_active" 1 "Hold_active" 2 "Parking_requested" 3 "Parking_active" 4 "Keep parking_active" 5 "Start_active" 6 "Release_request_active" 7 "Release_request_by_driver" 8 "Slipping_detected" 9 "Hold_standby_active" 10 "Start_standby_active" 14 "Init" 15 "Error " ;
-    HMS_aktives_System = 6; // 0 "No_System__Init_Error" 1 "Driver request_active" 2 "HMS_internal_active" 3 "ACC_active" 4 "Autohold_active" 5 "HHC_active" 6 "HVLM_active" 7 "Getriebe_aktiv" 8 "EBKV_aktiv" 9 "ParkAssist_aktiv" 10 "ARA_aktiv" 12 "Autonomous_Hold_aktiv" 13 "STA_aktiv " 14 "Motor_aktiv" 15 "EA_aktiv" 16 "VLK_aktiv" ;
+    mlb_state.HMS_Systemstatus = 3;   // 0 "No_function_active" 1 "Hold_active" 2 "Parking_requested" 3 "Parking_active" 4 "Keep parking_active" 5 "Start_active" 6 "Release_request_active" 7 "Release_request_by_driver" 8 "Slipping_detected" 9 "Hold_standby_active" 10 "Start_standby_active" 14 "Init" 15 "Error " ;
+    mlb_state.HMS_aktives_System = 6; // 0 "No_System__Init_Error" 1 "Driver request_active" 2 "HMS_internal_active" 3 "ACC_active" 4 "Autohold_active" 5 "HHC_active" 6 "HVLM_active" 7 "Getriebe_aktiv" 8 "EBKV_aktiv" 9 "ParkAssist_aktiv" 10 "ARA_aktiv" 12 "Autonomous_Hold_aktiv" 13 "STA_aktiv " 14 "Motor_aktiv" 15 "EA_aktiv" 16 "VLK_aktiv" ;
 
     // Lock Status:
     if (vehicle_status.locked == 0)
     {
-        ZV_verriegelt_soll = 1;
+        mlb_state.ZV_verriegelt_soll = 1;
     }
     if (vehicle_status.locked == 1)
     {
-        ZV_verriegelt_soll = 2;
+        mlb_state.ZV_verriegelt_soll = 2;
     }
 
     // Charger Activation State Logic:
     if (charger_status.HVLM_HV_ActivationRequest == 1)
     {
-        HV_Bordnetz_aktiv = true; // Indicates an active high-voltage vehicle electrical system: 0 = Not Active,  1 = Active
-        // HVK_BMS_Sollmodus = 4;
-        BMS_IstModus = 4;  // 0=Standby, 1=HV Active (Driving) 2=Balancing 4=AC charge, 6=DC charge, 7=init
-        BMS_HV_Status = 2; // HV System Voltage Detected  // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
-        HVK_MO_EmSollzustand = 50;
-        BMS_Charger_Active = 1;
+        mlb_state.HV_Bordnetz_aktiv = true; // Indicates an active high-voltage vehicle electrical system: 0 = Not Active,  1 = Active
+        mlb_state.BMS_IstModus = 4;  // 0=Standby, 1=HV Active (Driving) 2=Balancing 4=AC charge, 6=DC charge, 7=init
+        mlb_state.BMS_HV_Status = 2; // HV System Voltage Detected  // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
+        mlb_state.HVK_MO_EmSollzustand = 50;
+        mlb_state.BMS_Charger_Active = 1;
         charger_params.HVActiveDelayOff = 20;
     }
 
     if (charger_status.HVLM_HV_ActivationRequest == 0)
     {
-        BMS_Charger_Active = 0;
+        mlb_state.BMS_Charger_Active = 0;
         if (charger_params.HVActiveDelayOff >= 1)
         {
-            BMS_HV_Status = 2; // HV No Voltage // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
-            BMS_IstModus = 1;  // 0=Standby, 1=HV Active (Driving) 2=Balancing 4=AC charge, 6=DC charge, 7=init
-            HVK_BMS_Sollmodus = 1;
-            HVK_MO_EmSollzustand = 67;
+            mlb_state.BMS_HV_Status = 2; // HV No Voltage // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
+            mlb_state.BMS_IstModus = 1;  // 0=Standby, 1=HV Active (Driving) 2=Balancing 4=AC charge, 6=DC charge, 7=init
+            mlb_state.HVK_BMS_Sollmodus = 1;
+            mlb_state.HVK_MO_EmSollzustand = 67;
             charger_params.HVActiveDelayOff = charger_params.HVActiveDelayOff - 1;
         }
 
         if (charger_params.HVActiveDelayOff == 0)
         {
-            //   HV_Bordnetz_aktiv = false; // Indicates an active high-voltage vehicle electrical system: 0 = Not Active,  1 = Active
-            //   BMS_HV_Status = 1; // HV No Voltage // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
-            //   BMS_IstModus = 0; // 0=Standby, 1=HV Active (Driving) 2=Balancing 4=AC charge, 6=DC charge, 7=init
-            //   HVK_BMS_Sollmodus = 0;
-            //   HVK_MO_EmSollzustand = 0;
-            //   BMS_Batt_Volt = charger_status.HVVoltage*4; // Modify after testing to actual values from BMS/VCU
-            //   BMS_Batt_Volt_HVterm = charger_status.HVVoltage*2; // Modify after testing to actual values from BMS/VCU
+            //   mlb_state.HV_Bordnetz_aktiv = false; // Indicates an active high-voltage vehicle electrical system: 0 = Not Active,  1 = Active
+            //   mlb_state.BMS_HV_Status = 1; // HV No Voltage // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
+            //   mlb_state.BMS_IstModus = 0; // 0=Standby, 1=HV Active (Driving) 2=Balancing 4=AC charge, 6=DC charge, 7=init
+            //   mlb_state.HVK_BMS_Sollmodus = 0;
+            //   mlb_state.HVK_MO_EmSollzustand = 0;
+            //   mlb_state.BMS_Batt_Volt = charger_status.HVVoltage*4; // Modify after testing to actual values from BMS/VCU
+            //   mlb_state.BMS_Batt_Volt_HVterm = charger_status.HVVoltage*2; // Modify after testing to actual values from BMS/VCU
 
-            BMS_HV_Status = 2; // Voltage Applied // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
-            BMS_IstModus = 1;  // 0=Standby, 1=HV Active (Driving) 2=Balancing 4=AC charge, 6=DC charge, 7=init
-            HVK_BMS_Sollmodus = 1;
-            HVK_MO_EmSollzustand = 67;
+            mlb_state.BMS_HV_Status = 2; // Voltage Applied // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
+            mlb_state.BMS_IstModus = 1;  // 0=Standby, 1=HV Active (Driving) 2=Balancing 4=AC charge, 6=DC charge, 7=init
+            mlb_state.HVK_BMS_Sollmodus = 1;
+            mlb_state.HVK_MO_EmSollzustand = 67;
         }
     }
 
-    if (BMS_HV_Status == 2)
+    if (mlb_state.BMS_HV_Status == 2)
     {
-        HVK_DCDC_Sollmodus = 2;       // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
-        EM1_Status_Spgfreiheit = 2;   // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
-        HVK_Gesamtst_Spgfreiheit = 2; // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
+        mlb_state.HVK_DCDC_Sollmodus = 2;
+        mlb_state.EM1_Status_Spgfreiheit = 2;
+        mlb_state.HVK_Gesamtst_Spgfreiheit = 2;
     }
-    if (BMS_HV_Status == 1)
+    if (mlb_state.BMS_HV_Status == 1)
     {
-        HVK_DCDC_Sollmodus = 1;       // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
-        EM1_Status_Spgfreiheit = 1;   // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
-        HVK_Gesamtst_Spgfreiheit = 1; // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
+        mlb_state.HVK_DCDC_Sollmodus = 1;
+        mlb_state.EM1_Status_Spgfreiheit = 1;
+        mlb_state.HVK_Gesamtst_Spgfreiheit = 1;
     }
 
     switch (charger_params.activate)
     {
-    case 0:                         // Charger Standby
-        HVK_HVLM_Sollmodus = false; // Requested target mode of the charging manager: 0=Not Enabled, 1=Enabled
-        HVEM_Nachladen_Anf = false; // Request for HV charging with plugged in connector and deactivated charging request
-        BMS_Charger_Active = 0;
+    case 0:
+        mlb_state.HVK_HVLM_Sollmodus = false;
+        mlb_state.HVEM_Nachladen_Anf = false;
+        mlb_state.BMS_Charger_Active = 0;
         break;
 
-    case 1:                        // HV Active - Charger Active
-        HVEM_Nachladen_Anf = true; // Request for HV charging with plugged in connector and deactivated charging request
-        HVK_HVLM_Sollmodus = true; // Requested target mode of the charging manager: 0=Not Enabled, 1=Enabled
-        BMS_Charger_Active = 1;
-        HVK_BMS_Sollmodus = 4;
-
+    case 1:
+        mlb_state.HVEM_Nachladen_Anf = true;
+        mlb_state.HVK_HVLM_Sollmodus = true;
+        mlb_state.BMS_Charger_Active = 1;
+        mlb_state.HVK_BMS_Sollmodus = 4;
         break;
     }
 }
@@ -536,11 +537,11 @@ void VWMLBClass::msg040() // Airbag_01 - 0x40
 void VWMLBClass::msg184() // ZV_01   0x184
 {
     uint8_t buf[8]{};
-    buf[1] = ((0x00 & 0x0F) | ((ZV_FT_verriegeln & 0x01) << 4) |
-              ((ZV_FT_entriegeln & 0x01) << 5) | ((ZV_BT_verriegeln & 0x01) << 6) |
-              ((ZV_BT_entriegeln & 0x01) << 7)) |
+    buf[1] = ((0x00 & 0x0F) | ((mlb_state.ZV_FT_verriegeln & 0x01) << 4) |
+              ((mlb_state.ZV_FT_entriegeln & 0x01) << 5) | ((mlb_state.ZV_BT_verriegeln & 0x01) << 6) |
+              ((mlb_state.ZV_BT_entriegeln & 0x01) << 7)) |
              vag_cnt184;
-    buf[7] = ((0x00 >> 5) & 0x3F) | ((ZV_entriegeln_Anf & 0x01) << 6);
+    buf[7] = ((0x00 >> 5) & 0x3F) | ((mlb_state.ZV_entriegeln_Anf & 0x01) << 6);
     buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_ZV_01);
     can->Send(ID_ZV_01, buf, 8);
     vag_cnt184 = (vag_cnt184 + 1) & 0x0F;
@@ -549,13 +550,13 @@ void VWMLBClass::msg184() // ZV_01   0x184
 void VWMLBClass::msg191() // BMS_01   0x191
 {
     uint8_t buf[8]{};
-    buf[1] = ((BMS_Batt_Curr & 0x0F) << 4) | vag_cnt191;
-    buf[2] = (BMS_Batt_Curr >> 4) & 0xFF;
-    buf[3] = BMS_Batt_Volt & 0xFF;
-    buf[4] = ((BMS_Batt_Volt >> 8) & 0x0F) | ((BMS_Batt_Volt_HVterm & 0x0F) << 4);
-    buf[5] = ((BMS_Batt_Volt_HVterm >> 4) & 0x7F) | ((BMS_SOC_HiRes & 0x01) << 7);
-    buf[6] = (BMS_SOC_HiRes >> 1) & 0xFF;
-    buf[7] = (BMS_SOC_HiRes >> 9) & 0x03;
+    buf[1] = ((mlb_state.BMS_Batt_Curr & 0x0F) << 4) | vag_cnt191;
+    buf[2] = (mlb_state.BMS_Batt_Curr >> 4) & 0xFF;
+    buf[3] = mlb_state.BMS_Batt_Volt & 0xFF;
+    buf[4] = ((mlb_state.BMS_Batt_Volt >> 8) & 0x0F) | ((mlb_state.BMS_Batt_Volt_HVterm & 0x0F) << 4);
+    buf[5] = ((mlb_state.BMS_Batt_Volt_HVterm >> 4) & 0x7F) | ((mlb_state.BMS_SOC_HiRes & 0x01) << 7);
+    buf[6] = (mlb_state.BMS_SOC_HiRes >> 1) & 0xFF;
+    buf[7] = (mlb_state.BMS_SOC_HiRes >> 9) & 0x03;
     buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_01);
     can->Send(ID_BMS_01, buf, 8);
     vag_cnt191 = (vag_cnt191 + 1) & 0x0F;
@@ -565,9 +566,9 @@ void VWMLBClass::msg1A2() // ESP_15   0x1A2
 {
     uint8_t buf[8]{};
     buf[1] = vag_cnt1A2;
-    buf[4] = (HMS_Systemstatus & 0x0F) << 4;
-    buf[5] = (HMS_aktives_System & 0x1F) << 3;
-    buf[6] = (HMS_Fehlerstatus & 0x07) << 2;
+    buf[4] = (mlb_state.HMS_Systemstatus & 0x0F) << 4;
+    buf[5] = (mlb_state.HMS_aktives_System & 0x1F) << 3;
+    buf[6] = (mlb_state.HMS_Fehlerstatus & 0x07) << 2;
     buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_ESP_15);
     can->Send(ID_ESP_15, buf, 8);
     vag_cnt1A2 = (vag_cnt1A2 + 1) & 0x0F;
@@ -587,10 +588,10 @@ void VWMLBClass::msg503() // HVK_01     0x503
 {
     uint8_t buf[8]{};
     buf[1] = vag_cnt503;
-    buf[2] = HVK_MO_EmSollzustand & 0xFF;
-    buf[3] = (HVK_BMS_Sollmodus & 0x07) | ((HVK_DCDC_Sollmodus & 0x07) << 3);
-    buf[4] = (HVK_HVLM_Sollmodus & 0x07) << 4;
-    buf[5] = (HV_Bordnetz_aktiv & 0x01) << 1 | ((HVK_Gesamtst_Spgfreiheit & 0x03) << 3);
+    buf[2] = mlb_state.HVK_MO_EmSollzustand & 0xFF;
+    buf[3] = (mlb_state.HVK_BMS_Sollmodus & 0x07) | ((mlb_state.HVK_DCDC_Sollmodus & 0x07) << 3);
+    buf[4] = (mlb_state.HVK_HVLM_Sollmodus & 0x07) << 4;
+    buf[5] = (mlb_state.HV_Bordnetz_aktiv & 0x01) << 1 | ((mlb_state.HVK_Gesamtst_Spgfreiheit & 0x03) << 3);
     buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_HVK_01);
     can->Send(ID_HVK_01, buf, 8);
     vag_cnt503 = (vag_cnt503 + 1) & 0x0F;
@@ -608,14 +609,14 @@ void VWMLBClass::msg578() // BMS_DC_01    0x578
 void VWMLBClass::msg5A2() // BMS_04   0x5A2
 {
     uint8_t buf[8]{};
-    buf[1] = ((BMS_Status_ServiceDisconnect & 0x01) << 5) |
-             ((BMS_HV_Status & 0x03) << 6) | vag_cnt5A2;
-    buf[2] = ((BMS_IstModus & 0x07) << 1) | ((BMS_Faultstatus & 0x07) << 4) |
-             ((BMS_Batt_Ah & 0x01) << 7);
-    buf[3] = (BMS_Batt_Ah >> 1) & 0xFF;
-    buf[4] = (BMS_Batt_Ah >> 9) & 0x03;
-    buf[6] = (BMS_Target_SOC_HiRes & 0x07) << 5;
-    buf[7] = (BMS_Target_SOC_HiRes >> 3) & 0xFF;
+    buf[1] = ((mlb_state.BMS_Status_ServiceDisconnect & 0x01) << 5) |
+             ((mlb_state.BMS_HV_Status & 0x03) << 6) | vag_cnt5A2;
+    buf[2] = ((mlb_state.BMS_IstModus & 0x07) << 1) | ((mlb_state.BMS_Faultstatus & 0x07) << 4) |
+             ((mlb_state.BMS_Batt_Ah & 0x01) << 7);
+    buf[3] = (mlb_state.BMS_Batt_Ah >> 1) & 0xFF;
+    buf[4] = (mlb_state.BMS_Batt_Ah >> 9) & 0x03;
+    buf[6] = (mlb_state.BMS_Target_SOC_HiRes & 0x07) << 5;
+    buf[7] = (mlb_state.BMS_Target_SOC_HiRes >> 3) & 0xFF;
     buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_04);
     can->Send(ID_BMS_04, buf, 8);
     vag_cnt5A2 = (vag_cnt5A2 + 1) & 0x0F;
@@ -625,15 +626,15 @@ void VWMLBClass::msg5CA() // BMS_07   0x5CA
 {
     uint8_t buf[8]{};
     buf[1] = vag_cnt5CA;
-    buf[2] = (BMS_Batt_Energy & 0x0F) << 4;
-    buf[3] = ((BMS_Batt_Energy >> 4) & 0x7F) |
-             ((BMS_Charger_Active & 0x01) << 7);
-    buf[4] = (BMS_Battdiag & 0x07) |
-             ((BMS_Freig_max_Perf & 0x03) << 3) |
-             ((BMS_Balancing_Active & 0x03) << 6);
-    buf[5] = BMS_Max_Wh & 0xFF;
-    buf[6] = (BMS_Max_Wh >> 8) & 0x07;
-    buf[7] = (BMS_RIso_Ext >> 2) & 0xFF;
+    buf[2] = (mlb_state.BMS_Batt_Energy & 0x0F) << 4;
+    buf[3] = ((mlb_state.BMS_Batt_Energy >> 4) & 0x7F) |
+             ((mlb_state.BMS_Charger_Active & 0x01) << 7);
+    buf[4] = (mlb_state.BMS_Battdiag & 0x07) |
+             ((mlb_state.BMS_Freig_max_Perf & 0x03) << 3) |
+             ((mlb_state.BMS_Balancing_Active & 0x03) << 6);
+    buf[5] = mlb_state.BMS_Max_Wh & 0xFF;
+    buf[6] = (mlb_state.BMS_Max_Wh >> 8) & 0x07;
+    buf[7] = (mlb_state.BMS_RIso_Ext >> 2) & 0xFF;
     buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_07);
     can->Send(ID_BMS_07, buf, 8);
     vag_cnt5CA = (vag_cnt5CA + 1) & 0x0F;
@@ -643,7 +644,7 @@ void VWMLBClass::msg5CD() // DCDC_03    0x5CD
 {
     uint8_t buf[8]{};
     buf[1] = vag_cnt5CD;
-    buf[2] = (DC_IstModus_02 & 0x07) << 5;
+    buf[2] = (mlb_state.DC_IstModus_02 & 0x07) << 5;
     buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_DCDC_03);
     can->Send(ID_DCDC_03, buf, 8);
     vag_cnt5CD = (vag_cnt5CD + 1) & 0x0F;
@@ -653,8 +654,8 @@ void VWMLBClass::msg3C0() // Klemmen_Status_01
 {
     uint8_t buf[8]{};
     buf[1] = vag_cnt3C0;
-    buf[2] = (ZAS_Kl_S & 0x01) | ((ZAS_Kl_15 & 0x01) << 1) | ((ZAS_Kl_X & 0x01) << 2) |
-             ((ZAS_Kl_50_Startanforderung & 0x01) << 3);
+    buf[2] = (mlb_state.ZAS_Kl_S & 0x01) | ((mlb_state.ZAS_Kl_15 & 0x01) << 1) | ((mlb_state.ZAS_Kl_X & 0x01) << 2) |
+             ((mlb_state.ZAS_Kl_50_Startanforderung & 0x01) << 3);
     buf[0] = vag_utils::vw_crc_calc(buf, 8, 0x3C0);
     can->Send(0x3C0, buf, 8);
     vag_cnt3C0 = (vag_cnt3C0 + 1) & 0x0F;
@@ -663,13 +664,13 @@ void VWMLBClass::msg3C0() // Klemmen_Status_01
 void VWMLBClass::msg1A1() // BMS_02 0x1A1
 {
     uint8_t buf[8]{};
-    buf[1] = (BMS_MaxCharge_Curr_Offset & 0x0F) | ((BMS_MaxDischarge_Curr & 0x0F) << 4);
-    buf[2] = ((BMS_MaxDischarge_Curr >> 4) & 0x7F) | ((BMS_MaxCharge_Curr & 0x01) << 7);
-    buf[3] = (BMS_MaxCharge_Curr >> 1) & 0xFF;
-    buf[4] = ((BMS_MaxCharge_Curr >> 9) & 0x03) | ((BMS_Min_Batt_Volt & 0x3F) << 2);
-    buf[5] = ((BMS_Min_Batt_Volt >> 6) & 0x0F) | ((BMS_Min_Batt_Volt_Discharge & 0x0F) << 4);
-    buf[6] = ((BMS_Min_Batt_Volt_Discharge >> 4) & 0x3F) | ((BMS_Min_Batt_Volt_Charge & 0x03) << 6);
-    buf[7] = (BMS_Min_Batt_Volt_Charge >> 2) & 0xFF;
+    buf[1] = (mlb_state.BMS_MaxCharge_Curr_Offset & 0x0F) | ((mlb_state.BMS_MaxDischarge_Curr & 0x0F) << 4);
+    buf[2] = ((mlb_state.BMS_MaxDischarge_Curr >> 4) & 0x7F) | ((mlb_state.BMS_MaxCharge_Curr & 0x01) << 7);
+    buf[3] = (mlb_state.BMS_MaxCharge_Curr >> 1) & 0xFF;
+    buf[4] = ((mlb_state.BMS_MaxCharge_Curr >> 9) & 0x03) | ((mlb_state.BMS_Min_Batt_Volt & 0x3F) << 2);
+    buf[5] = ((mlb_state.BMS_Min_Batt_Volt >> 6) & 0x0F) | ((mlb_state.BMS_Min_Batt_Volt_Discharge & 0x0F) << 4);
+    buf[6] = ((mlb_state.BMS_Min_Batt_Volt_Discharge >> 4) & 0x3F) | ((mlb_state.BMS_Min_Batt_Volt_Charge & 0x03) << 6);
+    buf[7] = (mlb_state.BMS_Min_Batt_Volt_Charge >> 2) & 0xFF;
     buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_02);
     can->Send(ID_BMS_02, buf, 8);
 }
@@ -683,14 +684,14 @@ void VWMLBClass::msg2B1() // MSG_TME_02   0x2B1
 void VWMLBClass::msg39D() // BMS_03 0x39D
 {
     uint8_t buf[8]{};
-    buf[0] = BMS_OpenCircuit_Volts & 0xFF;
-    buf[1] = ((BMS_OpenCircuit_Volts >> 8) & 0x03) | ((BMS_Batt_Max_Volt & 0x0F) << 4);
-    buf[2] = ((BMS_Batt_Max_Volt >> 4) & 0x3F) | ((BMS_MaxDischarge_Curr & 0x03) << 6);
-    buf[3] = (BMS_MaxDischarge_Curr >> 2) & 0xFF;
-    buf[4] = ((BMS_MaxDischarge_Curr >> 10) & 0x01) | ((BMS_MaxCharge_Curr & 0x7F) << 1);
-    buf[5] = ((BMS_MaxCharge_Curr >> 7) & 0x0F) | ((BMS_Min_Batt_Volt_Discharge & 0x0F) << 4);
-    buf[6] = ((BMS_Min_Batt_Volt_Discharge >> 4) & 0x3F) | ((BMS_Min_Batt_Volt_Charge & 0x03) << 6);
-    buf[7] = (BMS_Min_Batt_Volt_Charge >> 2) & 0xFF;
+    buf[0] = mlb_state.BMS_OpenCircuit_Volts & 0xFF;
+    buf[1] = ((mlb_state.BMS_OpenCircuit_Volts >> 8) & 0x03) | ((mlb_state.BMS_Batt_Max_Volt & 0x0F) << 4);
+    buf[2] = ((mlb_state.BMS_Batt_Max_Volt >> 4) & 0x3F) | ((mlb_state.BMS_MaxDischarge_Curr & 0x03) << 6);
+    buf[3] = (mlb_state.BMS_MaxDischarge_Curr >> 2) & 0xFF;
+    buf[4] = ((mlb_state.BMS_MaxDischarge_Curr >> 10) & 0x01) | ((mlb_state.BMS_MaxCharge_Curr & 0x7F) << 1);
+    buf[5] = ((mlb_state.BMS_MaxCharge_Curr >> 7) & 0x0F) | ((mlb_state.BMS_Min_Batt_Volt_Discharge & 0x0F) << 4);
+    buf[6] = ((mlb_state.BMS_Min_Batt_Volt_Discharge >> 4) & 0x3F) | ((mlb_state.BMS_Min_Batt_Volt_Charge & 0x03) << 6);
+    buf[7] = (mlb_state.BMS_Min_Batt_Volt_Charge >> 2) & 0xFF;
     buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_03);
     can->Send(ID_BMS_03, buf, 8);
 }
@@ -698,13 +699,13 @@ void VWMLBClass::msg39D() // BMS_03 0x39D
 void VWMLBClass::msg509() // BMS_10 0x509
 {
     uint8_t buf[8]{};
-    buf[0] = BMS_BattEnergy_Wh_HiRes & 0xFF;
-    buf[1] = ((BMS_BattEnergy_Wh_HiRes >> 8) & 0x7F) | ((BMS_MaxBattEnergy_Wh_HiRes & 0x01) << 7);
-    buf[2] = (BMS_MaxBattEnergy_Wh_HiRes >> 1) & 0xFF;
-    buf[3] = ((BMS_MaxBattEnergy_Wh_HiRes >> 9) & 0x3F) | ((BMS_SOC & 0x03) << 6);
-    buf[4] = ((BMS_SOC >> 2) & 0x3F) | ((BMS_ResidualEnergy_Wh & 0x03) << 6);
-    buf[5] = (BMS_ResidualEnergy_Wh >> 2) & 0xFF;
-    buf[6] = ((BMS_ResidualEnergy_Wh >> 10) & 0x03) | ((0x64 & 0x3F) << 2);
+    buf[0] = mlb_state.BMS_BattEnergy_Wh_HiRes & 0xFF;
+    buf[1] = ((mlb_state.BMS_BattEnergy_Wh_HiRes >> 8) & 0x7F) | ((mlb_state.BMS_MaxBattEnergy_Wh_HiRes & 0x01) << 7);
+    buf[2] = (mlb_state.BMS_MaxBattEnergy_Wh_HiRes >> 1) & 0xFF;
+    buf[3] = ((mlb_state.BMS_MaxBattEnergy_Wh_HiRes >> 9) & 0x3F) | ((mlb_state.BMS_SOC & 0x03) << 6);
+    buf[4] = ((mlb_state.BMS_SOC >> 2) & 0x3F) | ((mlb_state.BMS_ResidualEnergy_Wh & 0x03) << 6);
+    buf[5] = (mlb_state.BMS_ResidualEnergy_Wh >> 2) & 0xFF;
+    buf[6] = ((mlb_state.BMS_ResidualEnergy_Wh >> 10) & 0x03) | ((0x64 & 0x3F) << 2);
     buf[7] = ((0x64 >> 6) & 0x01) | ((0x64 & 0x7F) << 1);
     buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_10);
     can->Send(ID_BMS_10, buf, 8);
@@ -713,11 +714,11 @@ void VWMLBClass::msg509() // BMS_10 0x509
 void VWMLBClass::msg552() // HVEM_05 0x552
 {
     uint8_t buf[8]{};
-    buf[1] = (HVEM_NVNachladen_Energie & 0x0F) << 4;
-    buf[2] = (HVEM_NVNachladen_Energie >> 4) & 0x0F;
-    buf[4] = (HVEM_Nachladen_Anf & 0x01) | ((HVEM_SollStrom_HV & 0x7F) << 1);
-    buf[5] = ((HVEM_SollStrom_HV >> 7) & 0x0F) | ((HVEM_MaxSpannung_HV & 0x0F) << 4);
-    buf[6] = (HVEM_MaxSpannung_HV >> 4) & 0x3F;
+    buf[1] = (mlb_state.HVEM_NVNachladen_Energie & 0x0F) << 4;
+    buf[2] = (mlb_state.HVEM_NVNachladen_Energie >> 4) & 0x0F;
+    buf[4] = (mlb_state.HVEM_Nachladen_Anf & 0x01) | ((mlb_state.HVEM_SollStrom_HV & 0x7F) << 1);
+    buf[5] = ((mlb_state.HVEM_SollStrom_HV >> 7) & 0x0F) | ((mlb_state.HVEM_MaxSpannung_HV & 0x0F) << 4);
+    buf[6] = (mlb_state.HVEM_MaxSpannung_HV >> 4) & 0x3F;
     buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_HVEM_05);
     can->Send(ID_HVEM_05, buf, 8);
 }
@@ -732,11 +733,11 @@ void VWMLBClass::msg5AC() // HVEM_02 0x5AC
 void VWMLBClass::msg583() // ZV_02 0x583
 {
     uint8_t buf[8]{};
-    buf[2] = (ZV_verriegelt_intern_ist & 0x01) |
-             ((ZV_verriegelt_extern_ist & 0x01) << 1) |
-             ((ZV_verriegelt_intern_soll & 0x01) << 2) |
-             ((ZV_verriegelt_extern_soll & 0x01) << 3);
-    buf[7] = (ZV_verriegelt_soll & 0x03) << 6;
+    buf[2] = (mlb_state.ZV_verriegelt_intern_ist & 0x01) |
+             ((mlb_state.ZV_verriegelt_extern_ist & 0x01) << 1) |
+             ((mlb_state.ZV_verriegelt_intern_soll & 0x01) << 2) |
+             ((mlb_state.ZV_verriegelt_extern_soll & 0x01) << 3);
+    buf[7] = (mlb_state.ZV_verriegelt_soll & 0x03) << 6;
     buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_ZV_02);
     can->Send(ID_ZV_02, buf, 8);
 }
@@ -744,9 +745,9 @@ void VWMLBClass::msg583() // ZV_02 0x583
 void VWMLBClass::msg59E() // BMS_06 0x59E
 {
     uint8_t buf[8]{};
-    buf[2] = BMS_Batt_Temp & 0xFF;
-    buf[3] = BMS_CurrBatt_Temp & 0xFF;
-    buf[7] = BMS_CoolantTemp_Act & 0xFF;
+    buf[2] = mlb_state.BMS_Batt_Temp & 0xFF;
+    buf[3] = mlb_state.BMS_CurrBatt_Temp & 0xFF;
+    buf[7] = mlb_state.BMS_CoolantTemp_Act & 0xFF;
     buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_06);
     can->Send(ID_BMS_06, buf, 8);
 }
@@ -754,10 +755,10 @@ void VWMLBClass::msg59E() // BMS_06 0x59E
 void VWMLBClass::msg485() // NavData_02 0x485
 {
     uint8_t buf[8]{};
-    buf[4] = UnixTime & 0xFF;
-    buf[5] = (UnixTime >> 8) & 0xFF;
-    buf[6] = (UnixTime >> 16) & 0xFF;
-    buf[7] = (UnixTime >> 24) & 0xFF;
+    buf[4] = mlb_state.UnixTime & 0xFF;
+    buf[5] = (mlb_state.UnixTime >> 8) & 0xFF;
+    buf[6] = (mlb_state.UnixTime >> 16) & 0xFF;
+    buf[7] = (mlb_state.UnixTime >> 24) & 0xFF;
     buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_NAVDATA_02);
     can->Send(ID_NAVDATA_02, buf, 8);
 }
@@ -772,10 +773,10 @@ void VWMLBClass::msg1A555548() // ORU_01 0x1A555548
 void VWMLBClass::msg1A5555AD() // Authentic_Time_01 0x1A5555AD
 {
     uint8_t buf[8]{};
-    buf[4] = UnixTime & 0xFF;
-    buf[5] = (UnixTime >> 8) & 0xFF;
-    buf[6] = (UnixTime >> 16) & 0xFF;
-    buf[7] = (UnixTime >> 24) & 0xFF;
+    buf[4] = mlb_state.UnixTime & 0xFF;
+    buf[5] = (mlb_state.UnixTime >> 8) & 0xFF;
+    buf[6] = (mlb_state.UnixTime >> 16) & 0xFF;
+    buf[7] = (mlb_state.UnixTime >> 24) & 0xFF;
     buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_AUTHENTIC_TIME_01);
     can->Send(ID_AUTHENTIC_TIME_01, buf, 8);
 }
@@ -783,12 +784,12 @@ void VWMLBClass::msg1A5555AD() // Authentic_Time_01 0x1A5555AD
 void VWMLBClass::msg96A955EB() // BMS_09 0x96A955EB
 {
     uint8_t buf[8]{};
-    buf[2] = ((BMS_HV_Auszeit_Status & 0x03) << 5) | ((BMS_HV_Auszeit & 0x01) << 7);
-    buf[3] = (BMS_HV_Auszeit >> 1) & 0xFF;
-    buf[4] = BMS_Kapazitaet & 0xFF;
-    buf[5] = ((BMS_Kapazitaet >> 8) & 0x07) | ((BMS_SOC_Kaltstart & 0x1F) << 3);
-    buf[6] = ((BMS_SOC_Kaltstart >> 5) & 0x3F) | ((BMS_max_Grenz_SOC & 0x03) << 6);
-    buf[7] = ((BMS_max_Grenz_SOC >> 2) & 0x07) | ((BMS_min_Grenz_SOC & 0x1F) << 3);
+    buf[2] = ((mlb_state.BMS_HV_Auszeit_Status & 0x03) << 5) | ((mlb_state.BMS_HV_Auszeit & 0x01) << 7);
+    buf[3] = (mlb_state.BMS_HV_Auszeit >> 1) & 0xFF;
+    buf[4] = mlb_state.BMS_Kapazitaet & 0xFF;
+    buf[5] = ((mlb_state.BMS_Kapazitaet >> 8) & 0x07) | ((mlb_state.BMS_SOC_Kaltstart & 0x1F) << 3);
+    buf[6] = ((mlb_state.BMS_SOC_Kaltstart >> 5) & 0x3F) | ((mlb_state.BMS_max_Grenz_SOC & 0x03) << 6);
+    buf[7] = ((mlb_state.BMS_max_Grenz_SOC >> 2) & 0x07) | ((mlb_state.BMS_min_Grenz_SOC & 0x1F) << 3);
     buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_09);
     can->Send(ID_BMS_09, buf, 8);
 }
@@ -796,11 +797,11 @@ void VWMLBClass::msg96A955EB() // BMS_09 0x96A955EB
 void VWMLBClass::msg96A954A6() // BMS_11 0x96A954A6
 {
     uint8_t buf[8]{};
-    buf[3] = BMS_BattCell_Temp_Max & 0xFF;
-    buf[4] = BMS_BattCell_Temp_Min & 0xFF;
-    buf[5] = BMS_BattCell_MV_Max & 0xFF;
-    buf[6] = ((BMS_BattCell_MV_Max >> 8) & 0x0F) | ((BMS_BattCell_MV_Min & 0x0F) << 4);
-    buf[7] = (BMS_BattCell_MV_Min >> 4) & 0xFF;
+    buf[3] = mlb_state.BMS_BattCell_Temp_Max & 0xFF;
+    buf[4] = mlb_state.BMS_BattCell_Temp_Min & 0xFF;
+    buf[5] = mlb_state.BMS_BattCell_MV_Max & 0xFF;
+    buf[6] = ((mlb_state.BMS_BattCell_MV_Max >> 8) & 0x0F) | ((mlb_state.BMS_BattCell_MV_Min & 0x0F) << 4);
+    buf[7] = (mlb_state.BMS_BattCell_MV_Min >> 4) & 0xFF;
     buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_11);
     can->Send(ID_BMS_11, buf, 8);
 }
@@ -815,12 +816,12 @@ void VWMLBClass::msg9A555539() // BMS_16 0x9A555539
 void VWMLBClass::msg9A555552() // BMS_27 0x9A555552
 {
     uint8_t buf[8]{};
-    buf[3] = (BMS_SOC_ChargeLim & 0x3F) << 2;
-    buf[4] = ((BMS_SOC_ChargeLim >> 6) & 0x01) | ((BMS_EnergyCount & 0x0F) << 1) |
-             ((BMS_EnergyReq_Full & 0x07) << 5);
-    buf[5] = (BMS_EnergyReq_Full >> 3) & 0xFF;
-    buf[6] = BMS_ChargePowerMax & 0xFF;
-    buf[7] = ((BMS_ChargePowerMax >> 8) & 0x0F) | ((BMS_ChargeEnergyCount & 0x0F) << 4);
+    buf[3] = (mlb_state.BMS_SOC_ChargeLim & 0x3F) << 2;
+    buf[4] = ((mlb_state.BMS_SOC_ChargeLim >> 6) & 0x01) | ((mlb_state.BMS_EnergyCount & 0x0F) << 1) |
+             ((mlb_state.BMS_EnergyReq_Full & 0x07) << 5);
+    buf[5] = (mlb_state.BMS_EnergyReq_Full >> 3) & 0xFF;
+    buf[6] = mlb_state.BMS_ChargePowerMax & 0xFF;
+    buf[7] = ((mlb_state.BMS_ChargePowerMax >> 8) & 0x0F) | ((mlb_state.BMS_ChargeEnergyCount & 0x0F) << 4);
     buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_27);
     can->Send(ID_BMS_27, buf, 8);
 }
