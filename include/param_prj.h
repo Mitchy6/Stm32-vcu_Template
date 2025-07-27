@@ -255,7 +255,68 @@
     VALUE_ENTRY(powerheater,   "W",                 2098 ) \
     VALUE_ENTRY(VehLockSt,     ONOFF,               2100 ) \
 
-//Next value Id: 2110
+#ifdef MLB_CHARGER_STANDALONE
+    VALUE_ENTRY(mlb_chr_DC_Max_ChargePower, "W",                 2111 ) \
+    VALUE_ENTRY(mlb_chr_DC_Max_ChargeVoltage, "V",               2112 ) \
+    VALUE_ENTRY(mlb_chr_DC_Actual_Current, "A",                  2113 ) \
+    VALUE_ENTRY(mlb_chr_DC_Max_ChargeCurrent, "A",               2114 ) \
+    VALUE_ENTRY(mlb_chr_DC_Min_ChargeVoltage, "V",               2115 ) \
+    VALUE_ENTRY(mlb_chr_DC_Min_ChargeCurrent, "A",               2116 ) \
+    VALUE_ENTRY(mlb_chr_Status_Grid, "dig",                      2117 ) \
+    VALUE_ENTRY(mlb_chr_ChargeManagerMode, "dig",                2118 ) \
+    VALUE_ENTRY(mlb_chr_ChargerRequestingHV, "dig",              2119 ) \
+    VALUE_ENTRY(mlb_chr_ChargerErrorStatus, "dig",               2120 ) \
+    VALUE_ENTRY(mlb_chr_PlugStatus, "dig",                       2121 ) \
+    VALUE_ENTRY(mlb_chr_LoadRequest, "dig",                      2122 ) \
+    VALUE_ENTRY(mlb_chr_ChargerState, "dig",                     2123 ) \
+    VALUE_ENTRY(mlb_chr_Charger_AC_Volt_RMS, "V",                2124 ) \
+    VALUE_ENTRY(mlb_chr_Charger_VoltageOut_HV, "V",              2125 ) \
+    VALUE_ENTRY(mlb_chr_Charger_CurrentOut_HV, "A",              2126 ) \
+    VALUE_ENTRY(mlb_chr_Charger_Temperature, "°C",               2127 ) \
+    VALUE_ENTRY(mlb_chr_ChargerSystemState, "dig",               2128 ) \
+    VALUE_ENTRY(mlb_chr_Status_LED, "dig",                       2129 ) \
+    VALUE_ENTRY(mlb_chr_MaxCurrent_AC, "A",                      2130 ) \
+    VALUE_ENTRY(mlb_chr_LockRequest, "dig",                      2131 ) \
+    VALUE_ENTRY(mlb_chr_Charger_Ready, "dig",                    2132 ) \
+    VALUE_ENTRY(mlb_chr_ChargerTemp_Reduction, "dig",            2133 ) \
+    VALUE_ENTRY(mlb_chr_ChargerCurrent_Reduction, "dig",         2134 ) \
+    VALUE_ENTRY(mlb_chr_SocketTemp_Reduction, "dig",             2135 ) \
+    VALUE_ENTRY(mlb_chr_MaxChargerOutput, "W",                   2136 ) \
+    VALUE_ENTRY(mlb_chr_CableCurrentLimit, "A",                  2137 ) \
+    VALUE_ENTRY(mlb_chr_ControlPilotStatus, "dig",               2138 ) \
+    VALUE_ENTRY(mlb_chr_LockState, "dig",                        2139 ) \
+    VALUE_ENTRY(mlb_chr_ChargerWarning, "dig",                   2140 ) \
+    VALUE_ENTRY(mlb_chr_ChargerFault, "dig",                     2141 ) \
+    VALUE_ENTRY(mlb_chr_OutputVolts, "V",                        2142 ) \
+    VALUE_ENTRY(mlb_chr_VCU_SOC, "%",                            2143 ) \
+    VALUE_ENTRY(mlb_chr_VCU_SOC_Limit, "%",                      2144 ) \
+    VALUE_ENTRY(mlb_chr_VCU_UDCmin, "V",                         2145 ) \
+    VALUE_ENTRY(mlb_chr_VCU_Current_SP, "A",                     2146 ) \
+    VALUE_ENTRY(mlb_chr_VCU_Volt_SP, "V",                        2147 ) \
+    VALUE_ENTRY(mlb_chr_BMS_Pack_Voltage, "V",                   2148 ) \
+    VALUE_ENTRY(mlb_chr_VCU_UDCmax, "V",                         2149 ) \
+    VALUE_ENTRY(mlb_chr_BMS_Highest_Cell_Temp, "°C",             2150 ) \
+    VALUE_ENTRY(mlb_chr_BMS_Lowest_Cell_Temp, "°C",              2151 ) \
+    VALUE_ENTRY(mlb_chr_BMS_Highest_Cell_Volt, "mV",             2152 ) \
+    VALUE_ENTRY(mlb_chr_BMS_Lowest_Cell_Volt, "mV",              2153 ) \
+    VALUE_ENTRY(mlb_chr_VCUChargeRequest, "dig",                 2154 ) \
+    VALUE_ENTRY(mlb_chr_VehicleLockState, "dig",                 2155 ) \
+    VALUE_ENTRY(mlb_chr_SOCx10, "dig",                            2156 ) \
+    VALUE_ENTRY(mlb_chr_SOC_Targetx10, "dig",                     2157 ) \
+    VALUE_ENTRY(mlb_chr_BMSMinVolt, "V",                         2158 ) \
+    VALUE_ENTRY(mlb_chr_IDCSetpnt, "A",                           2159 ) \
+    VALUE_ENTRY(mlb_chr_HVDCSetpnt, "V",                         2160 ) \
+    VALUE_ENTRY(mlb_chr_BMSBattCellSumx10, "dig",                 2161 ) \
+    VALUE_ENTRY(mlb_chr_BMSMaxVolt, "V",                         2162 ) \
+    VALUE_ENTRY(mlb_chr_BMS_Cell_H_Tempx10, "dig",               2163 ) \
+    VALUE_ENTRY(mlb_chr_BMS_Cell_L_Tempx10, "dig",               2164 ) \
+    VALUE_ENTRY(mlb_chr_BMS_Cell_H_mV, "mV",                     2165 ) \
+    VALUE_ENTRY(mlb_chr_BMS_Cell_L_mV, "mV",                      2166 ) \
+    VALUE_ENTRY(mlb_chr_Activation_Crg, "dig",                    2167 ) \
+    VALUE_ENTRY(mlb_chr_LockSim, "dig",                           2168 ) \
+#endif
+
+//Next value Id: 2169
 
 //Dead params
 /*
