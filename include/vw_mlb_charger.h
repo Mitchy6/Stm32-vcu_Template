@@ -31,6 +31,98 @@
 #include "CANSPI.h"
 #include "vag_utils.h"
 
+struct VehicleStatus {
+    bool locked = false;
+    bool CANQuiet = false;
+};
+
+struct ChargerStatus {
+    uint16_t ACvoltage;
+    uint16_t HVVoltage;
+    int8_t temperature;
+    uint8_t mode;
+    uint16_t current;
+    uint8_t MaxACAmps;
+    uint8_t PPLim;
+    uint32_t HVLM_MaxDC_ChargePower;       // maximum DC charging power
+    uint16_t HVLM_Max_DC_Voltage_DCLS;     // maximum DC charging voltage
+    uint16_t HVLM_Actual_DC_Current_DCLS;  // actual DC charging current
+    uint16_t HVLM_Max_DC_Current_DCLS;     // maximum DC charging current
+    uint16_t HVLM_Min_DC_Voltage_DCLS;     // minimum DC charging voltage
+    uint16_t HVLM_Min_DC_Current_DCLS;     // minimum DC charging current
+    uint8_t HVLM_Status_Grid;              // connected to power grid
+    uint8_t HVLM_EnergyFlowType;           // where the energy is flowing
+    uint8_t HVLM_OperationalMode;          // 0=Inactive, 1=Active, 2=Init, 3=Error
+    uint8_t HVLM_HV_ActivationRequest;     // 0=No Request, 1=Charging, 2=Balancing, 3=AC/Climate
+    uint8_t HVLM_ChargerErrorStatus;       // 0=No Error, 1=DC-NotOK, 2=AC-NotOK, 3=Interlock, 4-5=Reserved, 6=No Component Function, 7=Init
+    uint8_t HVLM_Park_Request;             // request to lock the drive train
+    uint8_t HVLM_Park_Request_Maintain;    // keep the drive train locked
+    uint8_t HVLM_Plug_Status;              // 0=Init, 1=No Plug, 2=Plug In, 3=Plug Locked
+    uint8_t HVLM_LoadRequest;              // 0=No Request, 1=AC Charge, 2=DC Charge, 3=Recharge 12V, 4=AC AWC Charge, 5=Reserved, 6=Init, 7=Error
+    uint8_t HVLM_MaxBattChargeCurrent;     // recommended HV battery charging current
+    uint8_t LAD_Mode;                      // charger operating mode
+    uint16_t LAD_AC_Volt_RMS;              // AC grid voltage (RMS)
+    uint16_t LAD_VoltageOut_HV;            // charger output voltage
+    uint16_t LAD_CurrentOut_HV;            // charger output current
+    uint8_t LAD_Status_Voltage;
+    uint16_t LAD_Temperature;              // charger temperature
+    uint16_t LAD_PowerLossVal;             // charger power loss
+    uint16_t HVLM_HV_StaleTime;            // time between HV off and on
+    uint8_t HVLM_ChargeSystemState;        // 0=OK, 1=Defective, 2=Incompatible, 3=DC Charge not possible
+    uint8_t HVLM_Status_LED;               // status of the charging LED
+    uint8_t HVLM_MaxCurrent_AC;            // max AC current
+    bool HVLM_LG_ChargerTargetMode;        // 0=Standby, 1=Mains Charging
+    uint8_t HVLM_TankCapReleaseRequest;    // 0=No Release, 1=Release, 2=Init, 3=Error
+    uint8_t HVLM_RequestConnectorLock;     // 0=Unlock, 1=Lock, 2=Init, 3=No Request
+    uint8_t HVLM_Start_VoltageMeasure_DCLS;// 0=Inactive, 1=DCLS With Diode, 2=DCLS Without Diode, 3=Reserved
+    uint8_t HVLM_ChargeReadyStatus;        // 0=No Error, 1=AC Not Possible, 2=DC Not Possible, 3=AC & DC Not Possible
+    uint16_t HVLM_Output_Voltage_HV;       // charger output voltage / DC station voltage
+    bool LAD_Reduction_ChargerTemp;        // reduced due to charger temp
+    bool LAD_Reduction_Current;            // regulated due to current or voltage
+    bool LAD_Reduction_SocketTemp;         // reduced due to socket temperature
+    uint16_t LAD_MaxChargerPower_HV;       // max charger power
+    uint8_t LAD_PRX_CableCurrentLimit;     // AC current limit from PRX cable
+    bool LAD_ControlPilotStatus;           // status of control pilot monitoring
+    bool LAD_LockFeedback;                 // status of connector lock feedback
+    uint8_t LAD_ChargerCoolingDemand;      // cooling demand of the charger
+    bool LAD_ChargerWarning;               // warning flag
+    bool LAD_ChargerFault;                 // fault flag
+};
+
+struct ChargerControl {
+    uint16_t HVDCSetpnt;
+    uint16_t IDCSetpnt;
+    uint16_t HVpwr = 0;
+    uint16_t HVcur = 0;
+    uint16_t calcpwr = 0;
+    uint8_t modeSet;
+    bool activate;
+};
+
+struct BatteryStatus {
+    uint16_t SOCx10;
+    uint16_t SOC_Targetx10;
+    uint16_t CapkWhx10;
+    uint16_t BattkWhx10;
+    uint16_t BMSVoltx10;
+    uint16_t BMSCurrx10;
+    uint16_t BMSMaxVolt;
+    uint16_t BMSMinVolt;
+    uint16_t BMSMaxChargeCurr;
+    uint16_t BMSBattCellSumx10;
+    uint16_t BMSCellAhx10 = 1080;
+    uint8_t HV_Status;
+    uint8_t BMS_Status;
+    uint8_t BMS_Mode;
+    uint16_t BMS_Battery_Tempx10 = 242;
+    uint16_t BMS_Coolant_Tempx10 = 201;
+    uint16_t BMS_Cell_H_Tempx10 = 290;
+    uint16_t BMS_Cell_L_Tempx10 = 220;
+    uint16_t BMS_Cell_H_mV = 3850;
+    uint16_t BMS_Cell_L_mV = 3750;
+    bool HVIL_Open = false;
+};
+
 class VWMLBClass: public Chargerhw
 {
 public:
@@ -129,6 +221,91 @@ private:
       uint8_t vag_cnt5A2            = 0x00;
       uint8_t vag_cnt5CA            = 0x00;
       uint8_t vag_cnt5CD            = 0x00;
+
+      VehicleStatus vehicle_status;
+      ChargerStatus charger_status;
+      ChargerControl charger_params;
+      BatteryStatus battery_status;
+      uint32_t UnixTime;
+      uint16_t BMS_Batt_Curr;
+      uint16_t BMS_Batt_Volt;
+      uint16_t BMS_Batt_Volt_HVterm;
+      uint16_t BMS_SOC_HiRes;
+      uint16_t BMS_MaxDischarge_Curr;
+      uint16_t BMS_Min_Batt_Volt;
+      uint16_t BMS_Min_Batt_Volt_Discharge;
+      uint16_t BMS_MaxCharge_Curr;
+      uint16_t BMS_MaxCharge_Curr_Offset;
+      uint16_t BMS_Batt_Max_Volt;
+      uint16_t BMS_Min_Batt_Volt_Charge;
+      uint16_t BMS_OpenCircuit_Volts;
+      bool BMS_Status_ServiceDisconnect;
+      uint8_t BMS_HV_Status;
+      bool BMS_Faultstatus;
+      uint8_t BMS_IstModus;
+      uint16_t BMS_Batt_Ah;
+      uint16_t BMS_Target_SOC_HiRes;
+      uint16_t BMS_Batt_Temp;
+      uint16_t BMS_CurrBatt_Temp;
+      uint16_t BMS_CoolantTemp_Act;
+      uint16_t BMS_Batt_Energy;
+      uint16_t BMS_Max_Wh;
+      uint16_t BMS_BattEnergy_Wh_HiRes;
+      uint16_t BMS_MaxBattEnergy_Wh_HiRes;
+      uint16_t BMS_SOC;
+      uint16_t BMS_ResidualEnergy_Wh;
+      uint16_t BMS_SOC_ChargeLim;
+      uint16_t BMS_EnergyCount;
+      uint16_t BMS_EnergyReq_Full;
+      uint16_t BMS_ChargePowerMax;
+      uint16_t BMS_ChargeEnergyCount;
+      uint16_t BMS_BattCell_Temp_Max;
+      uint16_t BMS_BattCell_Temp_Min;
+      uint16_t BMS_BattCell_MV_Max;
+      uint16_t BMS_BattCell_MV_Min;
+      bool HVEM_Nachladen_Anf;
+      uint16_t HVEM_SollStrom_HV;
+      uint16_t HVEM_MaxSpannung_HV;
+      uint8_t HMS_Systemstatus;
+      uint8_t HMS_aktives_System;
+      bool HMS_Fehlerstatus;
+      uint8_t HVK_HVLM_Sollmodus;
+      bool HV_Bordnetz_aktiv;
+      uint8_t HVK_MO_EmSollzustand;
+      uint8_t HVK_BMS_Sollmodus;
+      uint8_t HVK_DCDC_Sollmodus;
+      bool ZV_FT_verriegeln;
+      bool ZV_FT_entriegeln;
+      bool ZV_BT_verriegeln;
+      bool ZV_BT_entriegeln;
+      bool ZV_entriegeln_Anf;
+      bool ZV_verriegelt_intern_ist;
+      bool ZV_verriegelt_extern_ist;
+      bool ZV_verriegelt_intern_soll;
+      bool ZV_verriegelt_extern_soll;
+      uint8_t ZV_verriegelt_soll;
+      bool BMS_Charger_Active;
+      uint16_t BMS_RIso_Ext = 4090;
+      uint8_t HVK_Gesamtst_Spgfreiheit;
+      uint8_t BMS_Balancing_Active = 2;
+      uint8_t BMS_Freig_max_Perf = 1;
+      uint8_t BMS_Battdiag = 1;
+      uint8_t DC_IstModus_02 = 2;
+      uint8_t BMS_HV_Auszeit_Status = 1;
+      uint16_t BMS_HV_Auszeit = 25;
+      uint16_t BMS_Kapazitaet = 1000;
+      uint16_t BMS_SOC_Kaltstart = 0;
+      uint8_t BMS_max_Grenz_SOC = 30;
+      uint8_t BMS_min_Grenz_SOC = 15;
+      uint8_t EM1_Istmodus2;
+      uint8_t EM1_Status_Spgfreiheit;
+      bool ZAS_Kl_S;
+      bool ZAS_Kl_15;
+      bool ZAS_Kl_X;
+      bool ZAS_Kl_50_Startanforderung;
+      uint8_t HVActiveDelayOff;
+      uint8_t HVEM_NVNachladen_Energie = 200;
+      uint8_t LockState;
 };
 
 class VWMLBintClass: public Chargerint
