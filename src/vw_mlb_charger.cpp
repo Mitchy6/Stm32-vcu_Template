@@ -676,7 +676,8 @@ void VWMLBClass::msg1A1() // BMS_02 0x1A1
 
 void VWMLBClass::msg2B1() // MSG_TME_02   0x2B1
 {
-    can->Send(0x2B1, MSG_TME_02, 8);
+    uint8_t buf[8]{};
+    can->Send(0x2B1, buf, 8);
 }
 
 void VWMLBClass::msg39D() // BMS_03 0x39D
