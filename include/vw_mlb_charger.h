@@ -129,10 +129,8 @@ public:
       bool ControlCharge(bool RunCh, bool ACReq);
       void SetCanInterface(CanHardware*);
       void DecodeCAN(int id, uint32_t data[2]);
-      void Task1Ms(); // not used
       void Task10Ms();
       void Task100Ms();
-      void Task200Ms();
 
 
 private:
@@ -160,7 +158,6 @@ private:
       static constexpr uint32_t ID_BMS_27 = 0x9A555552;
       static constexpr uint32_t ID_ESP_15 = 0x1A2;
       //void CommandStates();
-      void Simulate();
       void TagParams();
       void CalcValues100ms();
       void msg3C0();
@@ -249,6 +246,7 @@ private:
       ChargerStatus charger_status;
       ChargerControl charger_params;
       BatteryStatus battery_status;
+      
       uint32_t UnixTime;
       uint16_t BMS_Batt_Curr;
       uint16_t BMS_Batt_Volt;
@@ -329,23 +327,6 @@ private:
       uint8_t HVActiveDelayOff;
       uint8_t HVEM_NVNachladen_Energie = 200;
       uint8_t LockState;
-};
-
-class VWMLBintClass: public Chargerint
-{
-public:
-      // void SetCanInterface(CanHardware* c);
-      // void DecodeCAN(int id, uint32_t data[2]);
-      // void Task10Ms();
-      // void Task100Ms();
-      // void Task200Ms();
-      // bool DCFCRequest(bool RunCh);
-      // bool ACRequest(bool RunCh);
-
-      
-protected:
-      // CanHardware* can;
-
 };
 
 #endif /* vw_mlb_charger_h */
