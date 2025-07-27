@@ -129,7 +129,7 @@ public:
       bool ControlCharge(bool RunCh, bool ACReq);
       void SetCanInterface(CanHardware*);
       void DecodeCAN(int id, uint32_t data[2]);
-      void Task1Ms();
+      void Task1Ms(); // not used
       void Task10Ms();
       void Task100Ms();
       void Task200Ms();

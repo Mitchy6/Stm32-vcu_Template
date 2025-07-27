@@ -54,29 +54,43 @@ void VWMLBClass::Simulate()
 }
 
 void VWMLBClass::Task1Ms()
-{ static uint8_t counter1ms = 0;
-    counter1ms++;  // Increments every 10ms
-    if(vehicle_status.CANQuiet == 1){  counter1ms = 0; }      // Quick way of silencing the canbus -- NOT IMPLEMENTED
-// - Do 10ms Tasks:
-    if (counter1ms % 10 == 0) { // Every 100ms (10ms * 1)
-    msg191();   // BMS_01   0x191     CRC
-    }
-// - Do 20ms, 40ms, 50ms tasks:
-    if (counter1ms % 20 == 0) { // Every 20ms (10ms * 2)
-    }
-    if (counter1ms % 40 == 0) { // Every 40ms (10ms * 4)
-    //msg040(); // Airbag_01 - 0x40     CRC
-    can->Send(0x2B1, MSG_TME_02, 8);    // MSG_TME_02   0x2B1
-    }
-    if (counter1ms % 50 == 0) { // Every 50ms (10ms * 5)
-    msg2AE(); // DCDC_01    0x2AE     CRC
-    counter1ms = 1;
-    }
+{
+    // No 1ms tasks for this charger
 }
 
 void VWMLBClass::Task10Ms()
 {
-    
+    static uint8_t counter10ms = 0;
+
+    // stop CAN chatter when requested
+    if (vehicle_status.CANQuiet == 1) {
+        counter10ms = 0;
+        return;
+    }
+
+    // called every 10 ms
+    counter10ms++;
+
+    // --- 100 ms tasks ---
+    if (counter10ms % 10 == 0) {
+        msg191();   // BMS_01   0x191     CRC
+    }
+
+    // --- 20 ms tasks (reserved) ---
+    if (counter10ms % 2 == 0) {
+    }
+
+    // --- 40 ms tasks ---
+    if (counter10ms % 4 == 0) {
+        //msg040(); // Airbag_01 - 0x40     CRC
+        can->Send(0x2B1, MSG_TME_02, 8);    // MSG_TME_02   0x2B1
+    }
+
+    // --- 50 ms tasks ---
+    if (counter10ms % 5 == 0) {
+        msg2AE(); // DCDC_01    0x2AE     CRC
+        counter10ms = 0;
+    }
 }
 
 void VWMLBClass::Task100Ms()
