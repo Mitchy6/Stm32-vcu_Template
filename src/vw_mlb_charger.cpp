@@ -20,9 +20,6 @@
 #include <vw_mlb_charger.h>
 #define MLB_CHARGER_STANDALONE
 
-uCAN_MSG txMsg;
-uint8_t CanMsgBuf[8];
-
 bool VWMLBClass::ControlCharge(bool RunCh, bool ACReq)
 {
     if (charger_status.HVLM_Plug_Status > 1 && RunCh)
