@@ -93,33 +93,33 @@ if (counter100ms % 1 == 0) { // Every 100ms (100ms * 2)
     msg503(); // HVK_01     0x503     CRC
     msg184(); // ZV_01    0x184       CRC
     msg578(); // BMS_DC_01    0x578   CRC
-    can->Send(0x1A1, BMS_02, 8);        // BMS_02   0x1A1
-    can->Send(0x39D, BMS_03, 8);        // BMS_03   0x39D
-    can->Send(0x509, BMS_10, 8);        // BMS_10   0x509
-    can->Send(0x552, HVEM_05, 8);       // HVEM_05  0x552 Fun items relating to Max Voltage and Plug Release
-    can->Send(0x5AC, HVEM_02, 8);       // HVEM_02  0x5AC
+    msg1A1();
+    msg39D();
+    msg509();
+    msg552();
+    msg5AC();
 }
 // - Do 200ms, 500ms, 1000ms and 2000ms tasks:
 if (counter100ms % 2 == 0) { // Every 200ms (100ms * 2)
     msg1A2(); // ESP_15   0x1A2       CRC
-    can->Send(0x583, ZV_02, 8);         // ZV_02 - 0x583
+    msg583();
 }
 if (counter100ms % 5 == 0) { // Every 500ms (100ms * 5)
     msg5A2(); // BMS_04   0x5A2       CRC
     msg5CA(); // BMS_07   0x5CA       CRC
     msg5CD(); // DCDC_03    0x5CD     CRC
-    can->Send(0x59E, BMS_06, 8);        // BMS_06   0x59E
+    msg59E();
 }
 if (counter100ms % 10 == 0) { // Every 1000ms (100ms * 10)
-    can->Send(0x485, Authentic_Time_01, 8);     // NavData_02 - 0x485
-    can->Send(0x1A555548, ORU_01, 8);   // ORU_01   0x1A555548
-    can->Send(0x1A5555AD, Authentic_Time_01, 8);    // Authentic_Time_01   0x1A5555AD
-    can->Send(0x96A955EB, BMS_09, 8);   // BMS_09   0x96A955EB
-    can->Send(0x9A555539, BMS_16, 8);   // BMS_16   0x9A555539     Just contains IDs for cells with low/high charge or temps
-    can->Send(0x9A555552, BMS_27, 8);   // BMS_27   0x9A555552
+    msg485();
+    msg1A555548();
+    msg1A5555AD();
+    msg96A955EB();
+    msg9A555539();
+    msg9A555552();
 }
 if (counter100ms % 20 == 0) { // Every 2000ms (100ms * 20)
-    can->Send(0x96A954A6, BMS_11, 8);   // BMS_11   0x96A954A6
+    msg96A954A6();
     counter100ms = 1;
 }
 }
@@ -148,159 +148,284 @@ void VWMLBClass::msg040() // Airbag_01 - 0x40
 
 void VWMLBClass::msg184() // ZV_01   0x184
 {
-    CanMsgBuf[0] = 0x00 ;
-    CanMsgBuf[1] = (ZV_01[1]|vag_cnt184) ;
-    CanMsgBuf[2] = ZV_01[2] ;
-    CanMsgBuf[3] = ZV_01[3] ;
-    CanMsgBuf[4] = ZV_01[4] ;
-    CanMsgBuf[5] = ZV_01[5] ;
-    CanMsgBuf[6] = ZV_01[6] ;
-    CanMsgBuf[7] = ZV_01[7] ;
-    CanMsgBuf[0] = vag_utils::vw_crc_calc(CanMsgBuf, 8, 0x184);
-    can->Send(0x184, CanMsgBuf, 8); 
-    vag_cnt184++;
-        if(vag_cnt184>0x0f) vag_cnt184=0x00;
+    uint8_t buf[8]{};
+    buf[1] = ((0x00 & 0x0F) | ((ZV_FT_verriegeln & 0x01) << 4) |
+               ((ZV_FT_entriegeln & 0x01) << 5) | ((ZV_BT_verriegeln & 0x01) << 6) |
+               ((ZV_BT_entriegeln & 0x01) << 7)) | vag_cnt184;
+    buf[7] = ((0x00 >> 5) & 0x3F) | ((ZV_entriegeln_Anf & 0x01) << 6);
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_ZV_01);
+    can->Send(ID_ZV_01, buf, 8);
+    vag_cnt184 = (vag_cnt184 + 1) & 0x0F;
 }
 
 void VWMLBClass::msg191() // BMS_01   0x191
 {
-    CanMsgBuf[0] = 0x00 ;
-    CanMsgBuf[1] = (BMS_01[1]|vag_cnt191) ;
-    CanMsgBuf[2] = BMS_01[2] ;
-    CanMsgBuf[3] = BMS_01[3] ;
-    CanMsgBuf[4] = BMS_01[4] ;
-    CanMsgBuf[5] = BMS_01[5] ;
-    CanMsgBuf[6] = BMS_01[6] ;
-    CanMsgBuf[7] = BMS_01[7] ;
-    CanMsgBuf[0] = vag_utils::vw_crc_calc(CanMsgBuf, 8, 0x191);
-    can->Send(0x191, CanMsgBuf, 8); 
-    vag_cnt191++;
-    if(vag_cnt191>0x0f) vag_cnt191=0x00;
+    uint8_t buf[8]{};
+    buf[1] = ((BMS_Batt_Curr & 0x0F) << 4) | vag_cnt191;
+    buf[2] = (BMS_Batt_Curr >> 4) & 0xFF;
+    buf[3] = BMS_Batt_Volt & 0xFF;
+    buf[4] = ((BMS_Batt_Volt >> 8) & 0x0F) | ((BMS_Batt_Volt_HVterm & 0x0F) << 4);
+    buf[5] = ((BMS_Batt_Volt_HVterm >> 4) & 0x7F) | ((BMS_SOC_HiRes & 0x01) << 7);
+    buf[6] = (BMS_SOC_HiRes >> 1) & 0xFF;
+    buf[7] = (BMS_SOC_HiRes >> 9) & 0x03;
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_01);
+    can->Send(ID_BMS_01, buf, 8);
+    vag_cnt191 = (vag_cnt191 + 1) & 0x0F;
 }
 
 void VWMLBClass::msg1A2() // ESP_15   0x1A2
 {
-    CanMsgBuf[0] = 0x00 ;
-    CanMsgBuf[1] = (ESP_15[1]|vag_cnt1A2) ;
-    CanMsgBuf[2] = ESP_15[2] ;
-    CanMsgBuf[3] = ESP_15[3] ;
-    CanMsgBuf[4] = ESP_15[4] ;
-    CanMsgBuf[5] = ESP_15[5] ;
-    CanMsgBuf[6] = ESP_15[6] ;
-    CanMsgBuf[7] = ESP_15[7] ;
-    CanMsgBuf[0] = vag_utils::vw_crc_calc(CanMsgBuf, 8, 0x1A2);
-    can->Send(0x1A2, CanMsgBuf, 8); 
-    vag_cnt1A2++;
-    if(vag_cnt1A2>0x0f) vag_cnt1A2=0x00;
+    uint8_t buf[8]{};
+    buf[1] = vag_cnt1A2;
+    buf[4] = (HMS_Systemstatus & 0x0F) << 4;
+    buf[5] = (HMS_aktives_System & 0x1F) << 3;
+    buf[6] = (HMS_Fehlerstatus & 0x07) << 2;
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_ESP_15);
+    can->Send(ID_ESP_15, buf, 8);
+    vag_cnt1A2 = (vag_cnt1A2 + 1) & 0x0F;
 }
 
 void VWMLBClass::msg2AE() // DCDC_01    0x2AE
 {
-    CanMsgBuf[0] = 0x00 ;
-    CanMsgBuf[1] = (DCDC_01[1]|vag_cnt2AE) ;
-    CanMsgBuf[2] = DCDC_01[2] ;
-    CanMsgBuf[3] = DCDC_01[3] ;
-    CanMsgBuf[4] = DCDC_01[4] ;
-    CanMsgBuf[5] = DCDC_01[5] ;
-    CanMsgBuf[6] = DCDC_01[6] ;
-    CanMsgBuf[7] = 0xA8 ; // Sets static 13.8V as DC output voltage
-    CanMsgBuf[0] = vag_utils::vw_crc_calc(CanMsgBuf, 8, 0x2AE);
-    can->Send(0x2AE, CanMsgBuf, 8);
-    vag_cnt2AE++;
-    if(vag_cnt2AE>0x0f) vag_cnt2AE=0x00;
+    uint8_t buf[8]{};
+    buf[1] = vag_cnt2AE;
+    buf[7] = 0xA8; // 13.8V output
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_DCDC_01);
+    can->Send(ID_DCDC_01, buf, 8);
+    vag_cnt2AE = (vag_cnt2AE + 1) & 0x0F;
 }
 
 void VWMLBClass::msg503() // HVK_01     0x503
 {
-    CanMsgBuf[0] = 0x00 ;
-    CanMsgBuf[1] = (HVK_01[1]|vag_cnt503) ;
-    CanMsgBuf[2] = HVK_01[2] ;
-    CanMsgBuf[3] = HVK_01[3] ;
-    CanMsgBuf[4] = HVK_01[4] ;
-    CanMsgBuf[5] = HVK_01[5] ;
-    CanMsgBuf[6] = HVK_01[6] ;
-    CanMsgBuf[7] = HVK_01[7] ;
-    CanMsgBuf[0] = vag_utils::vw_crc_calc(CanMsgBuf, 8, 0x503);
-    can->Send(0x503, CanMsgBuf, 8); 
-    vag_cnt503++;
-    if(vag_cnt503>0x0f) vag_cnt503=0x00;
+    uint8_t buf[8]{};
+    buf[1] = vag_cnt503;
+    buf[2] = HVK_MO_EmSollzustand & 0xFF;
+    buf[3] = (HVK_BMS_Sollmodus & 0x07) | ((HVK_DCDC_Sollmodus & 0x07) << 3);
+    buf[4] = (HVK_HVLM_Sollmodus & 0x07) << 4;
+    buf[5] = (HV_Bordnetz_aktiv & 0x01) << 1 | ((HVK_Gesamtst_Spgfreiheit & 0x03) << 3);
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_HVK_01);
+    can->Send(ID_HVK_01, buf, 8);
+    vag_cnt503 = (vag_cnt503 + 1) & 0x0F;
 }
 
-void VWMLBClass::msg578() // BMS_DC_01    0x578 
+void VWMLBClass::msg578() // BMS_DC_01    0x578
 {
-    CanMsgBuf[0] = 0x00 ;
-    CanMsgBuf[1] = (BMS_DC_01[1]|vag_cnt578) ;
-    CanMsgBuf[2] = BMS_DC_01[2] ;
-    CanMsgBuf[3] = BMS_DC_01[3] ;
-    CanMsgBuf[4] = BMS_DC_01[4] ;
-    CanMsgBuf[5] = BMS_DC_01[5] ;
-    CanMsgBuf[6] = BMS_DC_01[6] ;
-    CanMsgBuf[7] = BMS_DC_01[7] ;
-    CanMsgBuf[0] = vag_utils::vw_crc_calc(CanMsgBuf, 8, 0x578);
-    can->Send(0x578, CanMsgBuf, 8); 
-    vag_cnt578++;
-    if(vag_cnt578>0x0f) vag_cnt578=0x00;
+    uint8_t buf[8]{};
+    buf[1] = vag_cnt578;
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_DC_01);
+    can->Send(ID_BMS_DC_01, buf, 8);
+    vag_cnt578 = (vag_cnt578 + 1) & 0x0F;
 }
 void VWMLBClass::msg5A2() // BMS_04   0x5A2
 {
-    CanMsgBuf[0] = 0x00 ;
-    CanMsgBuf[1] = (BMS_04[1]|vag_cnt5A2) ;
-    CanMsgBuf[2] = BMS_04[2] ;
-    CanMsgBuf[3] = BMS_04[3] ;
-    CanMsgBuf[4] = BMS_04[4] ;
-    CanMsgBuf[5] = BMS_04[5] ;
-    CanMsgBuf[6] = BMS_04[6] ;
-    CanMsgBuf[7] = BMS_04[7] ;
-    CanMsgBuf[0] = vag_utils::vw_crc_calc(CanMsgBuf, 8, 0x5A2);
-    can->Send(0x5A2, CanMsgBuf, 8); 
-    vag_cnt5A2++;
-    if(vag_cnt5A2>0x0f) vag_cnt5A2=0x00;
+    uint8_t buf[8]{};
+    buf[1] = ((BMS_Status_ServiceDisconnect & 0x01) << 5) |
+             ((BMS_HV_Status & 0x03) << 6) | vag_cnt5A2;
+    buf[2] = ((BMS_IstModus & 0x07) << 1) | ((BMS_Faultstatus & 0x07) << 4) |
+             ((BMS_Batt_Ah & 0x01) << 7);
+    buf[3] = (BMS_Batt_Ah >> 1) & 0xFF;
+    buf[4] = (BMS_Batt_Ah >> 9) & 0x03;
+    buf[6] = (BMS_Target_SOC_HiRes & 0x07) << 5;
+    buf[7] = (BMS_Target_SOC_HiRes >> 3) & 0xFF;
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_04);
+    can->Send(ID_BMS_04, buf, 8);
+    vag_cnt5A2 = (vag_cnt5A2 + 1) & 0x0F;
 }
 void VWMLBClass::msg5CA() // BMS_07   0x5CA
 {
-    CanMsgBuf[0] = 0x00 ;
-    CanMsgBuf[1] = (BMS_07[1]|vag_cnt5CA) ;
-    CanMsgBuf[2] = BMS_07[2] ;
-    CanMsgBuf[3] = BMS_07[3] ;
-    CanMsgBuf[4] = BMS_07[4] ;
-    CanMsgBuf[5] = BMS_07[5] ;
-    CanMsgBuf[6] = BMS_07[6] ;
-    CanMsgBuf[7] = BMS_07[7] ;
-    CanMsgBuf[0] = vag_utils::vw_crc_calc(CanMsgBuf, 8, 0x5CA);
-    can->Send(0x5CA, CanMsgBuf, 8); 
-    vag_cnt5CA++;
-    if(vag_cnt5CA>0x0f) vag_cnt5CA=0x00;
+    uint8_t buf[8]{};
+    buf[1] = vag_cnt5CA;
+    buf[2] = (BMS_Batt_Energy & 0x0F) << 4;
+    buf[3] = ((BMS_Batt_Energy >> 4) & 0x7F) |
+             ((BMS_Charger_Active & 0x01) << 7);
+    buf[4] = (BMS_Battdiag & 0x07) |
+             ((BMS_Freig_max_Perf & 0x03) << 3) |
+             ((BMS_Balancing_Active & 0x03) << 6);
+    buf[5] = BMS_Max_Wh & 0xFF;
+    buf[6] = (BMS_Max_Wh >> 8) & 0x07;
+    buf[7] = (BMS_RIso_Ext >> 2) & 0xFF;
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_07);
+    can->Send(ID_BMS_07, buf, 8);
+    vag_cnt5CA = (vag_cnt5CA + 1) & 0x0F;
 }
 void VWMLBClass::msg5CD() // DCDC_03    0x5CD
 {
-    CanMsgBuf[0] = 0x00 ;
-    CanMsgBuf[1] = (DCDC_03[1]|vag_cnt5CD) ;
-    CanMsgBuf[2] = DCDC_03[2] ;
-    CanMsgBuf[3] = DCDC_03[3] ;
-    CanMsgBuf[4] = DCDC_03[4] ;
-    CanMsgBuf[5] = DCDC_03[5] ;
-    CanMsgBuf[6] = DCDC_03[6] ;
-    CanMsgBuf[7] = DCDC_03[7] ;
-    CanMsgBuf[0] = vag_utils::vw_crc_calc(CanMsgBuf, 8, 0x5CD);
-    can->Send(0x5CD, CanMsgBuf, 8); 
-    vag_cnt5CD++;
-    if(vag_cnt5CD>0x0f) vag_cnt5CD=0x00;
+    uint8_t buf[8]{};
+    buf[1] = vag_cnt5CD;
+    buf[2] = (DC_IstModus_02 & 0x07) << 5;
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_DCDC_03);
+    can->Send(ID_DCDC_03, buf, 8);
+    vag_cnt5CD = (vag_cnt5CD + 1) & 0x0F;
 }
 
 void VWMLBClass::msg3C0() // Klemmen_Status_01
 {
-    CanMsgBuf[0] = 0x00 ;
-    CanMsgBuf[1] = (Klemmen_Status_01[1] |vag_cnt3C0) ;
-    CanMsgBuf[2] = Klemmen_Status_01[2] ;
-    CanMsgBuf[3] = Klemmen_Status_01[3] ;
-    CanMsgBuf[4] = Klemmen_Status_01[4] ;
-    CanMsgBuf[5] = Klemmen_Status_01[5] ;
-    CanMsgBuf[6] = Klemmen_Status_01[6] ;
-    CanMsgBuf[7] = Klemmen_Status_01[7] ;
-    CanMsgBuf[0] = vag_utils::vw_crc_calc(CanMsgBuf, 8, 0x3C0);
-    can->Send(0x3C0, CanMsgBuf, 8); 
-    vag_cnt3C0++;
-    if(vag_cnt3C0>0x0f) vag_cnt3C0=0x00;
+    uint8_t buf[8]{};
+    buf[1] = vag_cnt3C0;
+    buf[2] = (ZAS_Kl_S & 0x01) | ((ZAS_Kl_15 & 0x01) << 1) | ((ZAS_Kl_X & 0x01) << 2) |
+             ((ZAS_Kl_50_Startanforderung & 0x01) << 3);
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, 0x3C0);
+    can->Send(0x3C0, buf, 8);
+    vag_cnt3C0 = (vag_cnt3C0 + 1) & 0x0F;
+}
+
+void VWMLBClass::msg1A1() // BMS_02 0x1A1
+{
+    uint8_t buf[8]{};
+    buf[1] = (BMS_MaxCharge_Curr_Offset & 0x0F) | ((BMS_MaxDischarge_Curr & 0x0F) << 4);
+    buf[2] = ((BMS_MaxDischarge_Curr >> 4) & 0x7F) | ((BMS_MaxCharge_Curr & 0x01) << 7);
+    buf[3] = (BMS_MaxCharge_Curr >> 1) & 0xFF;
+    buf[4] = ((BMS_MaxCharge_Curr >> 9) & 0x03) | ((BMS_Min_Batt_Volt & 0x3F) << 2);
+    buf[5] = ((BMS_Min_Batt_Volt >> 6) & 0x0F) | ((BMS_Min_Batt_Volt_Discharge & 0x0F) << 4);
+    buf[6] = ((BMS_Min_Batt_Volt_Discharge >> 4) & 0x3F) | ((BMS_Min_Batt_Volt_Charge & 0x03) << 6);
+    buf[7] = (BMS_Min_Batt_Volt_Charge >> 2) & 0xFF;
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_02);
+    can->Send(ID_BMS_02, buf, 8);
+}
+
+void VWMLBClass::msg39D() // BMS_03 0x39D
+{
+    uint8_t buf[8]{};
+    buf[0] = BMS_OpenCircuit_Volts & 0xFF;
+    buf[1] = ((BMS_OpenCircuit_Volts >> 8) & 0x03) | ((BMS_Batt_Max_Volt & 0x0F) << 4);
+    buf[2] = ((BMS_Batt_Max_Volt >> 4) & 0x3F) | ((BMS_MaxDischarge_Curr & 0x03) << 6);
+    buf[3] = (BMS_MaxDischarge_Curr >> 2) & 0xFF;
+    buf[4] = ((BMS_MaxDischarge_Curr >> 10) & 0x01) | ((BMS_MaxCharge_Curr & 0x7F) << 1);
+    buf[5] = ((BMS_MaxCharge_Curr >> 7) & 0x0F) | ((BMS_Min_Batt_Volt_Discharge & 0x0F) << 4);
+    buf[6] = ((BMS_Min_Batt_Volt_Discharge >> 4) & 0x3F) | ((BMS_Min_Batt_Volt_Charge & 0x03) << 6);
+    buf[7] = (BMS_Min_Batt_Volt_Charge >> 2) & 0xFF;
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_03);
+    can->Send(ID_BMS_03, buf, 8);
+}
+
+void VWMLBClass::msg509() // BMS_10 0x509
+{
+    uint8_t buf[8]{};
+    buf[0] = BMS_BattEnergy_Wh_HiRes & 0xFF;
+    buf[1] = ((BMS_BattEnergy_Wh_HiRes >> 8) & 0x7F) | ((BMS_MaxBattEnergy_Wh_HiRes & 0x01) << 7);
+    buf[2] = (BMS_MaxBattEnergy_Wh_HiRes >> 1) & 0xFF;
+    buf[3] = ((BMS_MaxBattEnergy_Wh_HiRes >> 9) & 0x3F) | ((BMS_SOC & 0x03) << 6);
+    buf[4] = ((BMS_SOC >> 2) & 0x3F) | ((BMS_ResidualEnergy_Wh & 0x03) << 6);
+    buf[5] = (BMS_ResidualEnergy_Wh >> 2) & 0xFF;
+    buf[6] = ((BMS_ResidualEnergy_Wh >> 10) & 0x03) | ((0x64 & 0x3F) << 2);
+    buf[7] = ((0x64 >> 6) & 0x01) | ((0x64 & 0x7F) << 1);
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_10);
+    can->Send(ID_BMS_10, buf, 8);
+}
+
+void VWMLBClass::msg552() // HVEM_05 0x552
+{
+    uint8_t buf[8]{};
+    buf[1] = (HVEM_NVNachladen_Energie & 0x0F) << 4;
+    buf[2] = (HVEM_NVNachladen_Energie >> 4) & 0x0F;
+    buf[4] = (HVEM_Nachladen_Anf & 0x01) | ((HVEM_SollStrom_HV & 0x7F) << 1);
+    buf[5] = ((HVEM_SollStrom_HV >> 7) & 0x0F) | ((HVEM_MaxSpannung_HV & 0x0F) << 4);
+    buf[6] = (HVEM_MaxSpannung_HV >> 4) & 0x3F;
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_HVEM_05);
+    can->Send(ID_HVEM_05, buf, 8);
+}
+
+void VWMLBClass::msg5AC() // HVEM_02 0x5AC
+{
+    uint8_t buf[8] = {0xFF, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_HVEM_02);
+    can->Send(ID_HVEM_02, buf, 8);
+}
+
+void VWMLBClass::msg583() // ZV_02 0x583
+{
+    uint8_t buf[8]{};
+    buf[2] = (ZV_verriegelt_intern_ist & 0x01) |
+             ((ZV_verriegelt_extern_ist & 0x01) << 1) |
+             ((ZV_verriegelt_intern_soll & 0x01) << 2) |
+             ((ZV_verriegelt_extern_soll & 0x01) << 3);
+    buf[7] = (ZV_verriegelt_soll & 0x03) << 6;
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_ZV_02);
+    can->Send(ID_ZV_02, buf, 8);
+}
+
+void VWMLBClass::msg59E() // BMS_06 0x59E
+{
+    uint8_t buf[8]{};
+    buf[2] = BMS_Batt_Temp & 0xFF;
+    buf[3] = BMS_CurrBatt_Temp & 0xFF;
+    buf[7] = BMS_CoolantTemp_Act & 0xFF;
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_06);
+    can->Send(ID_BMS_06, buf, 8);
+}
+
+void VWMLBClass::msg485() // NavData_02 0x485
+{
+    uint8_t buf[8]{};
+    buf[4] = UnixTime & 0xFF;
+    buf[5] = (UnixTime >> 8) & 0xFF;
+    buf[6] = (UnixTime >> 16) & 0xFF;
+    buf[7] = (UnixTime >> 24) & 0xFF;
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_NAVDATA_02);
+    can->Send(ID_NAVDATA_02, buf, 8);
+}
+
+void VWMLBClass::msg1A555548() // ORU_01 0x1A555548
+{
+    uint8_t buf[8]{};
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_ORU_01);
+    can->Send(ID_ORU_01, buf, 8);
+}
+
+void VWMLBClass::msg1A5555AD() // Authentic_Time_01 0x1A5555AD
+{
+    uint8_t buf[8]{};
+    buf[4] = UnixTime & 0xFF;
+    buf[5] = (UnixTime >> 8) & 0xFF;
+    buf[6] = (UnixTime >> 16) & 0xFF;
+    buf[7] = (UnixTime >> 24) & 0xFF;
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_AUTHENTIC_TIME_01);
+    can->Send(ID_AUTHENTIC_TIME_01, buf, 8);
+}
+
+void VWMLBClass::msg96A955EB() // BMS_09 0x96A955EB
+{
+    uint8_t buf[8]{};
+    buf[2] = ((BMS_HV_Auszeit_Status & 0x03) << 5) | ((BMS_HV_Auszeit & 0x01) << 7);
+    buf[3] = (BMS_HV_Auszeit >> 1) & 0xFF;
+    buf[4] = BMS_Kapazitaet & 0xFF;
+    buf[5] = ((BMS_Kapazitaet >> 8) & 0x07) | ((BMS_SOC_Kaltstart & 0x1F) << 3);
+    buf[6] = ((BMS_SOC_Kaltstart >> 5) & 0x3F) | ((BMS_max_Grenz_SOC & 0x03) << 6);
+    buf[7] = ((BMS_max_Grenz_SOC >> 2) & 0x07) | ((BMS_min_Grenz_SOC & 0x1F) << 3);
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_09);
+    can->Send(ID_BMS_09, buf, 8);
+}
+
+void VWMLBClass::msg96A954A6() // BMS_11 0x96A954A6
+{
+    uint8_t buf[8]{};
+    buf[3] = BMS_BattCell_Temp_Max & 0xFF;
+    buf[4] = BMS_BattCell_Temp_Min & 0xFF;
+    buf[5] = BMS_BattCell_MV_Max & 0xFF;
+    buf[6] = ((BMS_BattCell_MV_Max >> 8) & 0x0F) | ((BMS_BattCell_MV_Min & 0x0F) << 4);
+    buf[7] = (BMS_BattCell_MV_Min >> 4) & 0xFF;
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_11);
+    can->Send(ID_BMS_11, buf, 8);
+}
+
+void VWMLBClass::msg9A555539() // BMS_16 0x9A555539
+{
+    uint8_t buf[8]{};
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_16);
+    can->Send(ID_BMS_16, buf, 8);
+}
+
+void VWMLBClass::msg9A555552() // BMS_27 0x9A555552
+{
+    uint8_t buf[8]{};
+    buf[3] = (BMS_SOC_ChargeLim & 0x3F) << 2;
+    buf[4] = ((BMS_SOC_ChargeLim >> 6) & 0x01) | ((BMS_EnergyCount & 0x0F) << 1) |
+             ((BMS_EnergyReq_Full & 0x07) << 5);
+    buf[5] = (BMS_EnergyReq_Full >> 3) & 0xFF;
+    buf[6] = BMS_ChargePowerMax & 0xFF;
+    buf[7] = ((BMS_ChargePowerMax >> 8) & 0x0F) | ((BMS_ChargeEnergyCount & 0x0F) << 4);
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_27);
+    can->Send(ID_BMS_27, buf, 8);
 }
 
 void VWMLBClass::DecodeCAN(int id, uint32_t data[2])
@@ -657,171 +782,5 @@ void VWMLBClass::CalcValues100ms() // Run to calculate values every 100 ms
             
      break;
   }
-
-  //  BMS_01
-    BMS_01[0] = 0x00;
-    BMS_01[1] = (0x00 & (0x0FU)) | ((BMS_Batt_Curr & (0x0FU)) << 4);
-    BMS_01[2] = ((BMS_Batt_Curr >> 4) & (0xFFU));
-    BMS_01[3] = (BMS_Batt_Volt& (0xFFU));
-    BMS_01[4] = ((BMS_Batt_Volt >> 8) & (0x0FU)) | ((BMS_Batt_Volt_HVterm & (0x0FU)) << 4);
-    BMS_01[5] = ((BMS_Batt_Volt_HVterm >> 4) & (0x7FU)) | ((BMS_SOC_HiRes & (0x01U)) << 7);
-    BMS_01[6] = ((BMS_SOC_HiRes >> 1) & (0xFFU));
-    BMS_01[7] = ((BMS_SOC_HiRes >> 9) & (0x03U)) | ((0x00 & (0x01U)) << 2) | ((0x00 & (0x0FU)) << 4);
-
-  //  BMS_02
-    BMS_02[0] = 0x00;
-    BMS_02[1] = (BMS_MaxCharge_Curr_Offset & (0x0FU)) | ((BMS_MaxDischarge_Curr & (0x0FU)) << 4);
-    BMS_02[2] = ((BMS_MaxDischarge_Curr >> 4) & (0x7FU)) | ((BMS_MaxCharge_Curr & (0x01U)) << 7);
-    BMS_02[3] = ((BMS_MaxCharge_Curr >> 1) & (0xFFU));
-    BMS_02[4] = ((BMS_MaxCharge_Curr >> 9) & (0x03U)) | ((BMS_Min_Batt_Volt & (0x3FU)) << 2);
-    BMS_02[5] = ((BMS_Min_Batt_Volt >> 6) & (0x0FU)) | ((BMS_Min_Batt_Volt_Discharge & (0x0FU)) << 4);
-    BMS_02[6] = ((BMS_Min_Batt_Volt_Discharge >> 4) & (0x3FU)) | ((BMS_Min_Batt_Volt_Charge & (0x03U)) << 6);
-    BMS_02[7] = ((BMS_Min_Batt_Volt_Charge >> 2) & (0xFFU));
-
-  //  BMS_03
-    BMS_03[0] = (BMS_OpenCircuit_Volts & (0xFFU));
-    BMS_03[1] = ((BMS_OpenCircuit_Volts >> 8) & (0x03U)) | ((BMS_Batt_Max_Volt & (0x0FU)) << 4);
-    BMS_03[2] = ((BMS_Batt_Max_Volt >> 4) & (0x3FU)) | ((BMS_MaxDischarge_Curr & (0x03U)) << 6);
-    BMS_03[3] = ((BMS_MaxDischarge_Curr >> 2) & (0xFFU));
-    BMS_03[4] = ((BMS_MaxDischarge_Curr >> 10) & (0x01U)) | ((BMS_MaxCharge_Curr & (0x7FU)) << 1);
-    BMS_03[5] = ((BMS_MaxCharge_Curr >> 7) & (0x0FU)) | ((BMS_Min_Batt_Volt_Discharge & (0x0FU)) << 4);
-    BMS_03[6] = ((BMS_Min_Batt_Volt_Discharge >> 4) & (0x3FU)) | ((BMS_Min_Batt_Volt_Charge & (0x03U)) << 6);
-    BMS_03[7] = ((BMS_Min_Batt_Volt_Charge >> 2) & (0xFFU));
-
-  //  BMS_04
-    BMS_04[0] = 0x00;
-    BMS_04[1] = (0x00 & (0x0FU)) | ((BMS_Status_ServiceDisconnect & (0x01U)) << 5) | ((BMS_HV_Status & (0x03U)) << 6);
-    BMS_04[2] = 0x00 | ((BMS_IstModus & (0x07U)) << 1) | ((BMS_Faultstatus & (0x07U)) << 4) | ((BMS_Batt_Ah & (0x01U)) << 7);
-    BMS_04[3] = ((BMS_Batt_Ah >> 1) & (0xFFU));
-    BMS_04[4] = ((BMS_Batt_Ah >> 9) & (0x03U));
-    BMS_04[6] = ((BMS_Target_SOC_HiRes & (0x07U)) << 5);
-    BMS_04[7] = ((BMS_Target_SOC_HiRes >> 3) & (0xFFU));
-
-  //  BMS_06
-    BMS_06[2] = (BMS_Batt_Temp & (0xFFU));
-    BMS_06[3] = (BMS_CurrBatt_Temp & (0xFFU));
-    BMS_06[7] = (BMS_CoolantTemp_Act & (0xFFU));
-  //  BMS_07
-    BMS_07[0] = 0x00;
-    BMS_07[1] = (0x00 & (0x0FU)) | ((BMS_Batt_Energy & (0x0FU)) << 4);
-    BMS_07[2] = ((BMS_Batt_Energy >> 4) & (0x7FU)) | ((BMS_Charger_Active & (0x01U)) << 7); //BMS_07[2] = ((BMS_Batt_Energy >> 4) & (0x7FU)) | ((BMS_Charger_Active & (0x01U)) << 7);
-    BMS_07[3] = (BMS_Battdiag & (0x07U)) | ((BMS_Freig_max_Perf & (0x03U)) << 3) | ((BMS_Balancing_Active & (0x03U)) << 6);
-    BMS_07[4] = (BMS_Max_Wh & (0xFFU));
-    BMS_07[5] = ((BMS_Max_Wh >> 8) & (0x07U)) | ((0x0 & (0x01U)) << 3) | ((0x00 & (0x03U)) << 4) | ((0x00& (0x03U)) << 6); //BMS_07[5] = ((BMS_Max_Wh >> 8) & (0x07U)) | ((0x0 & (0x01U)) << 3) | ((BMS_Gesamtst_Spgfreiheit & (0x03U)) << 4) | ((BMS_RIso_Ext & (0x03U)) << 6);
-    BMS_07[6] = ((BMS_RIso_Ext >> 2) & (0xFFU));
-    BMS_07[7] = ((BMS_RIso_Ext >> 10) & (0x03U)) | ((0x00 & (0x03U)) << 2) | ((0x00 & (0x03U)) << 4);
-  //  BMS_09
-    BMS_09[2] = ((BMS_HV_Auszeit_Status & (0x03U)) << 5) | ((BMS_HV_Auszeit & (0x01U)) << 7);
-    BMS_09[3] = ((BMS_HV_Auszeit >> 1) & (0xFFU));
-    BMS_09[4] = (BMS_Kapazitaet & (0xFFU));
-    BMS_09[5] = ((BMS_Kapazitaet >> 8) & (0x07U)) | ((BMS_SOC_Kaltstart & (0x1FU)) << 3);
-    BMS_09[6] = ((BMS_SOC_Kaltstart >> 5) & (0x3FU)) | ((BMS_max_Grenz_SOC & (0x03U)) << 6);
-    BMS_09[7] = ((BMS_max_Grenz_SOC >> 2) & (0x07U)) | ((BMS_min_Grenz_SOC & (0x1FU)) << 3);
-  //  BMS_10
-    BMS_10[0] = (BMS_BattEnergy_Wh_HiRes & (0xFFU));
-    BMS_10[1] = ((BMS_BattEnergy_Wh_HiRes >> 8) & (0x7FU)) | ((BMS_MaxBattEnergy_Wh_HiRes & (0x01U)) << 7);
-    BMS_10[2] = ((BMS_MaxBattEnergy_Wh_HiRes >> 1) & (0xFFU));
-    BMS_10[3] = ((BMS_MaxBattEnergy_Wh_HiRes >> 9) & (0x3FU)) | ((BMS_SOC & (0x03U)) << 6);
-    BMS_10[4] = ((BMS_SOC >> 2) & (0x3FU)) | ((BMS_ResidualEnergy_Wh & (0x03U)) << 6);
-    BMS_10[5] = ((BMS_ResidualEnergy_Wh >> 2) & (0xFFU));
-    BMS_10[6] = ((BMS_ResidualEnergy_Wh >> 10) & (0x03U)) | ((0x64 & (0x3FU)) << 2);
-    BMS_10[7] = ((0x64 >> 6) & (0x01U)) | ((0x64 & (0x7FU)) << 1);
-  //  BMS_11
-    BMS_11[0] = 0x00;
-    BMS_11[1] = 0x00;
-    BMS_11[2] = ((0x02 & (0x0FU)) << 1) | ((0x01 & (0x07U)) << 5);
-    BMS_11[3] = (BMS_BattCell_Temp_Max & (0xFFU));
-    BMS_11[4] = (BMS_BattCell_Temp_Min & (0xFFU));
-    BMS_11[5] = (BMS_BattCell_MV_Max & (0xFFU));
-    BMS_11[6] = ((BMS_BattCell_MV_Max >> 8) & (0x0FU)) | ((BMS_BattCell_MV_Min & (0x0FU)) << 4);
-    BMS_11[7] = ((BMS_BattCell_MV_Min >> 4) & (0xFFU));
-  //  BMS_27
-    BMS_27[0] = 0x00;
-    BMS_27[1] = 0x00;
-    BMS_27[2] = 0x00;
-    BMS_27[3] = ((BMS_SOC_ChargeLim & (0x3FU)) << 2);
-    BMS_27[4] = ((BMS_SOC_ChargeLim >> 6) & (0x01U)) | ((BMS_EnergyCount & (0x0FU)) << 1) | ((BMS_EnergyReq_Full & (0x07U)) << 5);
-    BMS_27[5] = ((BMS_EnergyReq_Full >> 3) & (0xFFU));
-    BMS_27[6] = (BMS_ChargePowerMax & (0xFFU));
-    BMS_27[7] = ((BMS_ChargePowerMax >> 8) & (0x0FU)) | ((BMS_ChargeEnergyCount & (0x0FU)) << 4);
-  //  BMS_DC_01
-
-      //  BMS_Status_DCLS = Status of the voltage monitoring at the DC charging interface | 0=inactive, 1= i.O, 2= n.i.O, 3= Active
-      //  BMS_DCLS_Spannung = DC voltage of the charging station. Measurement between the DC HV lines.
-      //  BMS_DCLS_MaxLadeStrom = maximum permissible DC charging current
-
-  // BMS_DC_01[0] = (BMS_DC_01_CRC & (0xFFU));
-  // BMS_DC_01[1] = (BMS_DC_01_BZ & (0x0FU)) | ((BMS_Status_DCLS & (0x03U)) << 4) | ((BMS_DCLS_Spannung & (0x03U)) << 6);
-  // BMS_DC_01[2] = ((BMS_DCLS_Spannung >> 2) & (0xFFU));
-  // BMS_DC_01[3] = (BMS_DCLS_MaxLadeStrom & (0xFFU));
-  // BMS_DC_01[4] = ((BMS_DCLS_MaxLadeStrom >> 8) & (0x01U));
-  // BMS_DC_01[5] = 0x00;
-  // BMS_DC_01[6] = 0x00;
-  // BMS_DC_01[7] = 0x00;
-
-  //  DCDC_01 - For DC/DC 12V Converter
-      //  Intend to mirror HV voltage from main bus (unless found elsewhere)
-      //  Charger only seems interested in the 12V output Current & Voltage from module?
-  // DCDC_01[0] = 0x00;
-  // DCDC_01[1] = (0x00 & (0x0FU)) | ((DC_IstSpannung_HV & (0x0FU)) << 4);
-  // DCDC_01[2] = ((DC_IstSpannung_HV >> 4) & (0xFFU));
-  // DCDC_01[3] = (DC_IstStrom_HV_02 & (0xFFU));
-  // DCDC_01[4] = ((DC_IstStrom_HV_02 >> 8) & (0x03U)) | ((DC_IstStrom_NV & (0x3FU)) << 2);
-  // DCDC_01[5] = ((DC_IstStrom_NV >> 6) & (0x0FU));
-  // DCDC_01[7] = (DC_IstSpannung_NV & (0xFFU));
-
-  //  DCDC_03 - For DC/DC 12V Converter
-    DCDC_03[2] = (0x00 & (0x07U)) | ((0x00 & (0x01U)) << 3) | ((0x00 & (0x01U)) << 4) | ((DC_IstModus_02 & (0x07U)) << 5);
-
-
-  //  Dimmung_01
-  // Dimmung_01[0] = (DI_KL_58xd & (0xFFU));
-  // Dimmung_01[1] = (DI_KL_58xs & (0x7FU)) | ((DI_Display_Nachtdesign & (0x01U)) << 7);
-  // Dimmung_01[2] = (DI_KL_58xt & (0x7FU));
-  // Dimmung_01[3] = (DI_Fotosensor & (0xFFU));
-  // Dimmung_01[4] = ((DI_Fotosensor >> 8) & (0xFFU));
-  // Dimmung_01[5] = (BCM1_Stellgroesse_Kl_58s & (0x7FU));
-  // Dimmung_01[6] = 0x00;
-  // Dimmung_01[7] = 0x00;
-
-  //  HVEM_05
-    HVEM_05[0] = 0x00;
-    HVEM_05[1] = ((HVEM_NVNachladen_Energie & (0x0FU)) << 4);
-    HVEM_05[2] = (HVEM_NVNachladen_Energie >> 4) & (0x0FU);
-    HVEM_05[3] = 0x00;
-    HVEM_05[4] = (HVEM_Nachladen_Anf & (0x01U)) | ((HVEM_SollStrom_HV & (0x7FU)) << 1);
-    HVEM_05[5] = ((HVEM_SollStrom_HV >> 7) & (0x0FU)) | ((HVEM_MaxSpannung_HV & (0x0FU)) << 4);
-    HVEM_05[6] = ((HVEM_MaxSpannung_HV >> 4) & (0x3FU)) | ((0x00& (0x03U)) << 6);
-    HVEM_05[7] = 0x00;
-
-  // Authentic_Time_01 & NavData_02
-    Authentic_Time_01[4] = (UnixTime & (0xFFU));
-    Authentic_Time_01[5] = ((UnixTime >> 8) & (0xFFU));
-    Authentic_Time_01[6] = ((UnixTime >> 16) & (0xFFU));
-    Authentic_Time_01[7] = ((UnixTime >> 24) & (0xFFU));
-
-    ESP_15[4] = (0x00 & (0x01U)) | ((0x00 & (0x07U)) << 1) | ((HMS_Systemstatus & (0x0FU)) << 4);
-    ESP_15[5] = (0x00 & (0x07U)) | ((HMS_aktives_System & (0x1FU)) << 3);
-    ESP_15[6] = (0x00 & (0x01U)) | ((0x00 & (0x01U)) << 1) | ((HMS_Fehlerstatus & (0x07U)) << 2) | ((0x00 & (0x01U)) << 5) | ((0x00 & (0x03U)) << 6);
-
-    Klemmen_Status_01[2] = (ZAS_Kl_S & (0x01U)) | ((ZAS_Kl_15 & (0x01U)) << 1) | ((ZAS_Kl_X & (0x01U)) << 2) | ((ZAS_Kl_50_Startanforderung & (0x01U)) << 3) | ((0x00 & (0x01U)) << 4) | ((0x00 & (0x01U)) << 5) | ((0x00 & (0x01U)) << 6) | ((0x00 & (0x01U)) << 7);
-    
-    HVK_01[1] = (0x00 & (0x0FU)) | ((0x00 & (0x01U)) << 4) | ((0x00 & (0x03U)) << 5);
-    HVK_01[2] = (HVK_MO_EmSollzustand & (0xFFU));
-    HVK_01[3] = (HVK_BMS_Sollmodus & (0x07U)) | ((HVK_DCDC_Sollmodus & (0x07U)) << 3) | ((0x00 & (0x03U)) << 6);
-    HVK_01[4] = ((0x00 >> 2) & (0x01U)) | ((0x00 & (0x07U)) << 1) | ((HVK_HVLM_Sollmodus & (0x07U)) << 4) | ((0x00 & (0x01U)) << 7);
-    HVK_01[5] = ((0x00 >> 1) & (0x01U)) | ((HV_Bordnetz_aktiv & (0x01U)) << 1) | ((0x00 & (0x01U)) << 2) | ((HVK_Gesamtst_Spgfreiheit & (0x03U)) << 3) | ((0x00 & (0x01U)) << 5);
-
-    
-    ZV_01[1] = (0x00 & (0x0FU)) | ((ZV_FT_verriegeln & (0x01U)) << 4) | ((ZV_FT_entriegeln & (0x01U)) << 5) | ((ZV_BT_verriegeln & (0x01U)) << 6) | ((ZV_BT_entriegeln & (0x01U)) << 7);
-    ZV_01[7] = ((0x00 >> 5) & (0x3FU)) | ((ZV_entriegeln_Anf & (0x01U)) << 6) | ((0x00 & (0x01U)) << 7);
-    
-    ZV_02[2] = (ZV_verriegelt_intern_ist & (0x01U)) | ((ZV_verriegelt_extern_ist & (0x01U)) << 1) | ((ZV_verriegelt_intern_soll & (0x01U)) << 2) | ((ZV_verriegelt_extern_soll & (0x01U)) << 3) | ((0x00 & (0x01U)) << 4) | ((0x00 & (0x01U)) << 5) | ((0x00 & (0x01U)) << 6) | ((0x00 & (0x01U)) << 7);
-    ZV_02[7] = (0x00 & (0x01U)) | ((0x00 & (0x01U)) << 1) | ((0x00 & (0x01U)) << 2) | ((0x00 & (0x01U)) << 3) | ((0x00 & (0x01U)) << 4) | ((0x00 & (0x01U)) << 5) | ((ZV_verriegelt_soll & (0x03U)) << 6);
-
-
-
-    EM_HYB_11[1] = (0x00 & (0x0FU)) | ((EM1_Istmodus2 & (0x0FU)) << 4);
-    EM_HYB_11[2] = (0x00 & (0x07U)) | ((EM1_Status_Spgfreiheit & (0x03U)) << 3) | ((0x00 & (0x01U)) << 5);
 
 }
