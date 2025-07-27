@@ -24,6 +24,7 @@
 
 bool VWMLBClass::ControlCharge(bool RunCh, bool ACReq)
 {
+    (void)ACReq; // ACReq is currently unused
     if (charger_status.HVLM_Plug_Status > 1 && RunCh)
     {
         charger_params.activate = 1;
@@ -761,7 +762,7 @@ void VWMLBClass::msg485() // NavData_02 0x485
 void VWMLBClass::msg1A555548() // ORU_01 0x1A555548
 {
     uint8_t buf[8]{};
-    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_ORU_01);
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, static_cast<uint16_t>(ID_ORU_01));
     can->Send(ID_ORU_01, buf, 8);
 }
 
@@ -772,7 +773,7 @@ void VWMLBClass::msg1A5555AD() // Authentic_Time_01 0x1A5555AD
     buf[5] = (UnixTime >> 8) & 0xFF;
     buf[6] = (UnixTime >> 16) & 0xFF;
     buf[7] = (UnixTime >> 24) & 0xFF;
-    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_AUTHENTIC_TIME_01);
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, static_cast<uint16_t>(ID_AUTHENTIC_TIME_01));
     can->Send(ID_AUTHENTIC_TIME_01, buf, 8);
 }
 
@@ -785,7 +786,7 @@ void VWMLBClass::msg96A955EB() // BMS_09 0x96A955EB
     buf[5] = ((BMS_Kapazitaet >> 8) & 0x07) | ((BMS_SOC_Kaltstart & 0x1F) << 3);
     buf[6] = ((BMS_SOC_Kaltstart >> 5) & 0x3F) | ((BMS_max_Grenz_SOC & 0x03) << 6);
     buf[7] = ((BMS_max_Grenz_SOC >> 2) & 0x07) | ((BMS_min_Grenz_SOC & 0x1F) << 3);
-    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_09);
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, static_cast<uint16_t>(ID_BMS_09));
     can->Send(ID_BMS_09, buf, 8);
 }
 
@@ -797,14 +798,14 @@ void VWMLBClass::msg96A954A6() // BMS_11 0x96A954A6
     buf[5] = BMS_BattCell_MV_Max & 0xFF;
     buf[6] = ((BMS_BattCell_MV_Max >> 8) & 0x0F) | ((BMS_BattCell_MV_Min & 0x0F) << 4);
     buf[7] = (BMS_BattCell_MV_Min >> 4) & 0xFF;
-    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_11);
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, static_cast<uint16_t>(ID_BMS_11));
     can->Send(ID_BMS_11, buf, 8);
 }
 
 void VWMLBClass::msg9A555539() // BMS_16 0x9A555539
 {
     uint8_t buf[8]{};
-    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_16);
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, static_cast<uint16_t>(ID_BMS_16));
     can->Send(ID_BMS_16, buf, 8);
 }
 
@@ -817,6 +818,6 @@ void VWMLBClass::msg9A555552() // BMS_27 0x9A555552
     buf[5] = (BMS_EnergyReq_Full >> 3) & 0xFF;
     buf[6] = BMS_ChargePowerMax & 0xFF;
     buf[7] = ((BMS_ChargePowerMax >> 8) & 0x0F) | ((BMS_ChargeEnergyCount & 0x0F) << 4);
-    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_27);
+    buf[0] = vag_utils::vw_crc_calc(buf, 8, static_cast<uint16_t>(ID_BMS_27));
     can->Send(ID_BMS_27, buf, 8);
 }
