@@ -22,11 +22,103 @@
 
 #define MLB_CHARGER_STANDALONE //Comment out to run in Zombie integrated mode
 
+/*CAN send information flow path:
+
++-------------------------------+           +-------------------------------+
+|      [SIMULATION MODE]        |           |    [NON-SIMULATION MODE]      |
+|-------------------------------|           |-------------------------------|
+|  sim_params (Param)           |           |  zombie_parameters (Param)    |
+|  (user/test/GUI values)       |           |  (VCU/user/vehicle setpoints) |
++--------------+----------------+           +--------------+----------------+
+               |                                       |
+               v                                       v
+    +----------------------------+          +-----------------------------+
+    |      TagParams()           |          |     TagParams()             |
+    |----------------------------|          |-----------------------------|
+    | Reads:                     |          | Reads:                      |
+    |  - sim_params              |          |  - zombie_parameters        |
+    | Writes:                    |          |  - charger_status (CAN in)  |
+    |  - battery_status          |          | Writes:                     |
+    |  - charger_params          |          |  - battery_status           |
+    |  - vehicle_status          |          |  - charger_params           |
+    |                            |          |  - vehicle_status           |
+    |                            |          |  - zombie_parameters        |
+    +--------------+-------------+          |    (Param::Set*)            |
+                   |                        +--------------+--------------+
+                   |                                       |
+    (all status structs populated)         (status structs populated, parameters updated)
+                   |                                       |
+                   +-------------------+-------------------+
+                                       |
+                                       v
+                        +------------------------------------------+
+                        |         Internal Data Structures         |
+                        |------------------------------------------|
+                        |    battery_status                        |
+                        |    charger_params                        |
+                        |    vehicle_status                        |
+                        +-------------------+----------------------+
+                                            |
+                                            v
+                                +---------------------------+
+                                |     CalcValues100ms()     |
+                                |---------------------------|
+                                | Reads/Writes:             |
+                                |  - battery_status         |
+                                |  - charger_params         |
+                                |  - vehicle_status         |
+                                | (computes setpoints,      |
+                                |  performs charge logic)   |
+                                +------------+--------------+
+                                             |
+                                             v
+                                +---------------------------+
+                                |      emulateMLB()         |
+                                |---------------------------|
+                                | Reads:                    |
+                                |  - battery_status         |
+                                |  - charger_params         |
+                                |  - vehicle_status         |
+                                | Writes:                   |
+                                |  - mlb_state              |
+                                +------------+--------------+
+                                             |
+                                             v
+                                +---------------------------+
+                                |        send_can()         |
+                                |---------------------------|
+                                | Reads: mlb_state          |
+                                | Writes: CAN messages      |
+                                +------------+--------------+
+                                             |
+                                             v
+                      +-----------------------------------------------+
+                      |        CAN Bus: Outgoing                      |
+                      |   (Other Vehicle ECUs/Modules)                |
+                      +-----------------------------------------------+
+*/
+
+/*CAN recieve information flow path:
+   +------------+
+   |  CAN In    |
+   | (messages) |
+   +-----+------+
+         |
+         v
++---------------------+
+|    DecodeCAN()      |
+|---------------------|
+| Decodes messages,   |
+| populates           |
+| charger_status      |
++----------+----------+
+*/
+
 
 
 bool VWMLBClass::ControlCharge(bool RunCh, bool ACReq)
 {
-#ifdef MLB_CHARGER_SIM
+#ifdef MLB_CHARGER_STANDALONE
     /*
      * In simulation mode the activation request is supplied via parameter
      * mlb_chr_sim_Activation_Crg.  Do not override it here.
@@ -153,7 +245,7 @@ void VWMLBClass::Task100Ms()
     }
 }
 
-void VWMLBClass::TagParams() // To make code portable between standalone (more params) vs Zombie (basic params) - This code executed 100ms, uncomment or delete un-needed params
+void VWMLBClass::TagParams() // To make code portable between standalone (more params) vs Zombie (basic params) 
 {
 
     // copy charger state into values
@@ -282,6 +374,10 @@ void VWMLBClass::CalcValues100ms() // Run to calculate values every 100 ms
 
     emulateMLB();
 }
+
+//----------------------------------------------------------------------------------------------------------------------------------------------
+// Creation of MLB vehicle state
+//----------------------------------------------------------------------------------------------------------------------------------------------
 
 void VWMLBClass::emulateMLB()
 {
