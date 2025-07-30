@@ -21,10 +21,22 @@
 #include "params.h"
 
 #define MLB_CHARGER_STANDALONE
+// Define MLB_CHARGER_SIM to enable simulation behaviour for the charger. When
+// enabled the charger activation state will be taken from the simulation
+// parameter instead of being decided by ControlCharge().
+//#define MLB_CHARGER_SIM
 
 
 bool VWMLBClass::ControlCharge(bool RunCh, bool ACReq)
 {
+#ifdef MLB_CHARGER_SIM
+    /*
+     * In simulation mode the activation request is supplied via parameter
+     * mlb_chr_sim_Activation_Crg.  Do not override it here.
+     */
+    charger_params.activate = Param::GetInt(Param::mlb_chr_sim_Activation_Crg);
+    return charger_params.activate;
+#else
     if (charger_status.HVLM_Plug_Status > 1 && RunCh)
     {
         charger_params.activate = 1;
@@ -35,6 +47,7 @@ bool VWMLBClass::ControlCharge(bool RunCh, bool ACReq)
         charger_params.activate = 0;
         return false;
     }
+#endif
 }
 
 void VWMLBClass::Task10Ms()
