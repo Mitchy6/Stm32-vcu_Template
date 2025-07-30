@@ -20,11 +20,8 @@
 #include <vw_mlb_charger.h>
 #include "params.h"
 
-#define MLB_CHARGER_STANDALONE
-// Define MLB_CHARGER_SIM to enable simulation behaviour for the charger. When
-// enabled the charger activation state will be taken from the simulation
-// parameter instead of being decided by ControlCharge().
-//#define MLB_CHARGER_SIM
+#define MLB_CHARGER_STANDALONE //Comment out to run in Zombie integrated mode
+
 
 
 bool VWMLBClass::ControlCharge(bool RunCh, bool ACReq)
@@ -159,12 +156,7 @@ void VWMLBClass::Task100Ms()
 void VWMLBClass::TagParams() // To make code portable between standalone (more params) vs Zombie (basic params) - This code executed 100ms, uncomment or delete un-needed params
 {
 
-#ifdef MLB_CHARGER_STANDALONE
-    // in standalone mode the vw mlb charger class has no interaction with other class of zombie e.g. via parameters.
-    // it is used for testing, and if the vcu should be used only to manage the charger
-    // it can be dangerous, because because e.g. single cell values arent considered
-
-    //copy charger state into values
+    // copy charger state into values
     Param::SetInt(Param::mlb_chr_DC_Max_ChargePower, charger_status.HVLM_MaxDC_ChargePower);
     Param::SetInt(Param::mlb_chr_DC_Max_ChargeVoltage, charger_status.HVLM_Max_DC_Voltage_DCLS);
     Param::SetInt(Param::mlb_chr_DC_Actual_Current, charger_status.HVLM_Actual_DC_Current_DCLS);
@@ -198,7 +190,12 @@ void VWMLBClass::TagParams() // To make code portable between standalone (more p
     Param::SetInt(Param::mlb_chr_ChargerFault, charger_status.LAD_ChargerFault);
     Param::SetInt(Param::mlb_chr_OutputVolts, charger_status.HVLM_Output_Voltage_HV);
 
-    //copy parameters directly from user settable simulation values
+#ifdef MLB_CHARGER_STANDALONE
+    // in standalone mode the vw mlb charger class has no interaction with other class of zombie e.g. via parameters.
+    // it is used for testing, and if the vcu should be used only to manage the charger
+    // it can be dangerous, because because e.g. single cell values arent considered
+
+    // copy parameters directly from user settable simulation values
     battery_status.SOCx10 = Param::GetInt(Param::mlb_chr_sim_SOC) * 10;
     battery_status.SOC_Targetx10 = Param::GetInt(Param::mlb_chr_sim_SOC_Target) * 10;
     battery_status.BMSMinVolt = Param::GetInt(Param::mlb_chr_sim_BMSMinVolt);
@@ -210,9 +207,9 @@ void VWMLBClass::TagParams() // To make code portable between standalone (more p
     battery_status.BMS_Cell_L_Tempx10 = Param::GetInt(Param::mlb_chr_sim_BMS_Cell_L_Temp) * 10;
     battery_status.BMS_Cell_H_mV = Param::GetInt(Param::mlb_chr_sim_BMS_Cell_H_mV);
     battery_status.BMS_Cell_L_mV = Param::GetInt(Param::mlb_chr_sim_BMS_Cell_L_mV);
-    mlb_state.ZV_verriegelt_extern_ist = Param::GetInt(Param::mlb_chr_sim_Lock);
+    vehicle_status.locked = Param::GetInt(Param::mlb_chr_sim_Lock); //was before mlb_state.ZV_verriegelt_extern_ist = ...
 #else
-    //normal operation mode with parameters exchange. and reduced parameter set
+    // normal operation mode with parameters exchange. and reduced parameter set
     battery_status.SOCx10 = int(Param::GetFloat(Param::SOC) * 10);
     battery_status.SOC_Targetx10 = 1000;
     battery_status.CapkWhx10 = int(Param::GetFloat(Param::BattCap) * 10);
@@ -229,6 +226,7 @@ void VWMLBClass::TagParams() // To make code portable between standalone (more p
     battery_status.BMS_Cell_L_mV = int(Param::GetFloat(Param::BMS_Vmin) * 100);
     vehicle_status.locked = Param::GetInt(Param::VehLockSt);
 
+    //backward mapping into ZombieVCU
     Param::SetInt(Param::CableLim, charger_status.MaxACAmps);
     Param::SetInt(Param::AC_Volts, charger_status.ACvoltage);
     Param::SetInt(Param::ChgTemp, charger_status.temperature);
@@ -358,8 +356,8 @@ void VWMLBClass::emulateMLB()
     if (charger_status.HVLM_HV_ActivationRequest == 1)
     {
         mlb_state.HV_Bordnetz_aktiv = true; // Indicates an active high-voltage vehicle electrical system: 0 = Not Active,  1 = Active
-        mlb_state.BMS_IstModus = 4;  // 0=Standby, 1=HV Active (Driving) 2=Balancing 4=AC charge, 6=DC charge, 7=init
-        mlb_state.BMS_HV_Status = 2; // HV System Voltage Detected  // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
+        mlb_state.BMS_IstModus = 4;         // 0=Standby, 1=HV Active (Driving) 2=Balancing 4=AC charge, 6=DC charge, 7=init
+        mlb_state.BMS_HV_Status = 2;        // HV System Voltage Detected  // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
         mlb_state.HVK_MO_EmSollzustand = 50;
         mlb_state.BMS_Charger_Active = 1;
         charger_params.HVActiveDelayOff = 20;
