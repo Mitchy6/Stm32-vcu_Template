@@ -765,7 +765,6 @@ void VWMLBClass::msg1A1() // BMS_02 0x1A1
     buf[5] = ((mlb_state.BMS_Min_Batt_Volt >> 6) & 0x0F) | ((mlb_state.BMS_Min_Batt_Volt_Discharge & 0x0F) << 4);
     buf[6] = ((mlb_state.BMS_Min_Batt_Volt_Discharge >> 4) & 0x3F) | ((mlb_state.BMS_Min_Batt_Volt_Charge & 0x03) << 6);
     buf[7] = (mlb_state.BMS_Min_Batt_Volt_Charge >> 2) & 0xFF;
-    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_02);
     can->Send(ID_BMS_02, buf, 8);
 }
 
@@ -786,7 +785,6 @@ void VWMLBClass::msg39D() // BMS_03 0x39D
     buf[5] = ((mlb_state.BMS_MaxCharge_Curr >> 7) & 0x0F) | ((mlb_state.BMS_Min_Batt_Volt_Discharge & 0x0F) << 4);
     buf[6] = ((mlb_state.BMS_Min_Batt_Volt_Discharge >> 4) & 0x3F) | ((mlb_state.BMS_Min_Batt_Volt_Charge & 0x03) << 6);
     buf[7] = (mlb_state.BMS_Min_Batt_Volt_Charge >> 2) & 0xFF;
-    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_03);
     can->Send(ID_BMS_03, buf, 8);
 }
 
@@ -801,26 +799,24 @@ void VWMLBClass::msg509() // BMS_10 0x509
     buf[5] = (mlb_state.BMS_ResidualEnergy_Wh >> 2) & 0xFF;
     buf[6] = ((mlb_state.BMS_ResidualEnergy_Wh >> 10) & 0x03) | ((0x64 & 0x3F) << 2);
     buf[7] = ((0x64 >> 6) & 0x01) | ((0x64 & 0x7F) << 1);
-    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_10);
     can->Send(ID_BMS_10, buf, 8);
 }
 
 void VWMLBClass::msg552() // HVEM_05 0x552
 {
     uint8_t buf[8]{};
+    buf[0] = 0;
     buf[1] = (mlb_state.HVEM_NVNachladen_Energie & 0x0F) << 4;
     buf[2] = (mlb_state.HVEM_NVNachladen_Energie >> 4) & 0x0F;
     buf[4] = (mlb_state.HVEM_Nachladen_Anf & 0x01) | ((mlb_state.HVEM_SollStrom_HV & 0x7F) << 1);
     buf[5] = ((mlb_state.HVEM_SollStrom_HV >> 7) & 0x0F) | ((mlb_state.HVEM_MaxSpannung_HV & 0x0F) << 4);
     buf[6] = (mlb_state.HVEM_MaxSpannung_HV >> 4) & 0x3F;
-    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_HVEM_05);
     can->Send(ID_HVEM_05, buf, 8);
 }
 
 void VWMLBClass::msg5AC() // HVEM_02 0x5AC
 {
     uint8_t buf[8] = {0xFF, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_HVEM_02);
     can->Send(ID_HVEM_02, buf, 8);
 }
 
@@ -832,7 +828,6 @@ void VWMLBClass::msg583() // ZV_02 0x583
              ((mlb_state.ZV_verriegelt_intern_soll & 0x01) << 2) |
              ((mlb_state.ZV_verriegelt_extern_soll & 0x01) << 3);
     buf[7] = (mlb_state.ZV_verriegelt_soll & 0x03) << 6;
-    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_ZV_02);
     can->Send(ID_ZV_02, buf, 8);
 }
 
@@ -842,7 +837,6 @@ void VWMLBClass::msg59E() // BMS_06 0x59E
     buf[2] = mlb_state.BMS_Batt_Temp & 0xFF;
     buf[3] = mlb_state.BMS_CurrBatt_Temp & 0xFF;
     buf[7] = mlb_state.BMS_CoolantTemp_Act & 0xFF;
-    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_06);
     can->Send(ID_BMS_06, buf, 8);
 }
 
@@ -853,14 +847,12 @@ void VWMLBClass::msg485() // NavData_02 0x485
     buf[5] = (mlb_state.UnixTime >> 8) & 0xFF;
     buf[6] = (mlb_state.UnixTime >> 16) & 0xFF;
     buf[7] = (mlb_state.UnixTime >> 24) & 0xFF;
-    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_NAVDATA_02);
     can->Send(ID_NAVDATA_02, buf, 8);
 }
 
 void VWMLBClass::msg1A555548() // ORU_01 0x1A555548
 {
     uint8_t buf[8]{};
-    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_ORU_01);
     can->Send(ID_ORU_01, buf, 8);
 }
 
@@ -871,7 +863,6 @@ void VWMLBClass::msg1A5555AD() // Authentic_Time_01 0x1A5555AD
     buf[5] = (mlb_state.UnixTime >> 8) & 0xFF;
     buf[6] = (mlb_state.UnixTime >> 16) & 0xFF;
     buf[7] = (mlb_state.UnixTime >> 24) & 0xFF;
-    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_AUTHENTIC_TIME_01);
     can->Send(ID_AUTHENTIC_TIME_01, buf, 8);
 }
 
@@ -884,7 +875,6 @@ void VWMLBClass::msg96A955EB() // BMS_09 0x96A955EB
     buf[5] = ((mlb_state.BMS_Kapazitaet >> 8) & 0x07) | ((mlb_state.BMS_SOC_Kaltstart & 0x1F) << 3);
     buf[6] = ((mlb_state.BMS_SOC_Kaltstart >> 5) & 0x3F) | ((mlb_state.BMS_max_Grenz_SOC & 0x03) << 6);
     buf[7] = ((mlb_state.BMS_max_Grenz_SOC >> 2) & 0x07) | ((mlb_state.BMS_min_Grenz_SOC & 0x1F) << 3);
-    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_09);
     can->Send(ID_BMS_09, buf, 8);
 }
 
@@ -896,14 +886,12 @@ void VWMLBClass::msg96A954A6() // BMS_11 0x96A954A6
     buf[5] = mlb_state.BMS_BattCell_MV_Max & 0xFF;
     buf[6] = ((mlb_state.BMS_BattCell_MV_Max >> 8) & 0x0F) | ((mlb_state.BMS_BattCell_MV_Min & 0x0F) << 4);
     buf[7] = (mlb_state.BMS_BattCell_MV_Min >> 4) & 0xFF;
-    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_11);
     can->Send(ID_BMS_11, buf, 8);
 }
 
 void VWMLBClass::msg9A555539() // BMS_16 0x9A555539
 {
     uint8_t buf[8]{};
-    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_16);
     can->Send(ID_BMS_16, buf, 8);
 }
 
@@ -916,6 +904,5 @@ void VWMLBClass::msg9A555552() // BMS_27 0x9A555552
     buf[5] = (mlb_state.BMS_EnergyReq_Full >> 3) & 0xFF;
     buf[6] = mlb_state.BMS_ChargePowerMax & 0xFF;
     buf[7] = ((mlb_state.BMS_ChargePowerMax >> 8) & 0x0F) | ((mlb_state.BMS_ChargeEnergyCount & 0x0F) << 4);
-    buf[0] = vag_utils::vw_crc_calc(buf, 8, ID_BMS_27);
     can->Send(ID_BMS_27, buf, 8);
 }
