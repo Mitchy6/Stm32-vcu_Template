@@ -262,21 +262,21 @@
     VALUE_ENTRY(mlb_chr_DC_Min_ChargeVoltage, "V", 2115)                           \
     VALUE_ENTRY(mlb_chr_DC_Min_ChargeCurrent, "A", 2116)                           \
     VALUE_ENTRY(mlb_chr_Status_Grid, "dig", 2117)                                  \
-    VALUE_ENTRY(mlb_chr_ChargeManagerMode, "dig", 2118)                            \
-    VALUE_ENTRY(mlb_chr_ChargerRequestingHV, "dig", 2119)                          \
-    VALUE_ENTRY(mlb_chr_ChargerErrorStatus, "dig", 2120)                           \
-    VALUE_ENTRY(mlb_chr_PlugStatus, "dig", 2121)                                   \
-    VALUE_ENTRY(mlb_chr_LoadRequest, "dig", 2122)                                  \
+    VALUE_ENTRY(mlb_chr_ChargeManagerMode, HVLM_OPMODE, 2118)                            \
+    VALUE_ENTRY(mlb_chr_ChargerRequestingHV, HVLM_ACTREQ, 2119)                          \
+    VALUE_ENTRY(mlb_chr_ChargerErrorStatus, HVLM_ERRORSTATUS, 2120)                           \
+    VALUE_ENTRY(mlb_chr_PlugStatus, HVLM_PLUGSTATUS, 2121)                                   \
+    VALUE_ENTRY(mlb_chr_LoadRequest, HVLM_LOADREQ, 2122)                                  \
     VALUE_ENTRY(mlb_chr_ChargerState, "dig", 2123)                                 \
     VALUE_ENTRY(mlb_chr_Charger_AC_Volt_RMS, "V", 2124)                            \
     VALUE_ENTRY(mlb_chr_Charger_VoltageOut_HV, "V", 2125)                          \
     VALUE_ENTRY(mlb_chr_Charger_CurrentOut_HV, "A", 2126)                          \
     VALUE_ENTRY(mlb_chr_Charger_Temperature, "°C", 2127)                           \
-    VALUE_ENTRY(mlb_chr_ChargerSystemState, "dig", 2128)                           \
+    VALUE_ENTRY(mlb_chr_ChargerSystemState, HVLM_CHARGESYSSTATE, 2128)                           \
     VALUE_ENTRY(mlb_chr_Status_LED, "dig", 2129)                                   \
     VALUE_ENTRY(mlb_chr_MaxCurrent_AC, "A", 2130)                                  \
-    VALUE_ENTRY(mlb_chr_LockRequest, "dig", 2131)                                  \
-    VALUE_ENTRY(mlb_chr_Charger_Ready, "dig", 2132)                                \
+    VALUE_ENTRY(mlb_chr_LockRequest, HVLM_CONNECTORLOCK, 2131)                                  \
+    VALUE_ENTRY(mlb_chr_Charger_Ready, HVLM_CHGREADY, 2132)                                \
     VALUE_ENTRY(mlb_chr_ChargerTemp_Reduction, "dig", 2133)                        \
     VALUE_ENTRY(mlb_chr_ChargerCurrent_Reduction, "dig", 2134)                     \
     VALUE_ENTRY(mlb_chr_SocketTemp_Reduction, "dig", 2135)                         \
@@ -373,6 +373,16 @@
 #define LIMITREASON "0=None, 1=UDClimLow, 2=UDClimHigh, 4=IDClimLow, 8=IDClimHigh, 16=TempLim"
 #define DIRLIM "0=None, 1=SpeedThres, 2=SpeedBrake"
 #define ABOVEBELOW "0=BelowOF,1=BelowScale, 2=AboveOF, 3=AboveScale"
+#define HVLM_OPMODE "0=Inactive, 1=Active, 2=Init, 3=Error"
+#define HVLM_ACTREQ "0=No Request, 1=Charging, 2=Balancing, 3=AC/Climate"
+#define HVLM_ERRORSTATUS "0=No Error, 1=DC-NotOK, 2=AC-NotOK, 3=Interlock, 4=Reserved, 5=Reserved, 6=No Component Function, 7=Init"
+#define HVLM_PLUGSTATUS "0=Init, 1=No Plug, 2=Plug In, 3=Plug Locked"
+#define HVLM_LOADREQ "0=No Request, 1=AC Charge, 2=DC Charge, 3=Recharge 12V, 4=AC AWC Charge, 5=Reserved, 6=Init, 7=Error"
+#define HVLM_CHARGESYSSTATE "0=OK, 1=Defective, 2=Incompatible, 3=DC Charge not possible"
+#define HVLM_TANKCAPREQ "0=No Release, 1=Release, 2=Init, 3=Error"
+#define HVLM_CONNECTORLOCK "0=Unlock, 1=Lock, 2=Init, 3=No Request"
+#define HVLM_VOLTMEAS "0=Inactive, 1=DCLS With Diode, 2=DCLS Without Diode, 3=Reserved"
+#define HVLM_CHGREADY "0=No Error, 1=AC Not Possible, 2=DC Not Possible, 3=AC & DC Not Possible"
 
 #define CAN_PERIOD_100MS 0
 #define CAN_PERIOD_10MS 1
