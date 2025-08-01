@@ -118,6 +118,8 @@
 
 bool VWMLBClass::ControlCharge(bool RunCh, bool ACReq)
 {
+(void) ACReq;
+(void) RunCh;
 #ifdef MLB_CHARGER_STANDALONE
     /*
      * In simulation mode the activation request is supplied via parameter

@@ -24,7 +24,7 @@
 
 namespace vag_utils {
 
-uint8_t vw_crc_calc(uint8_t* inputBytes, uint8_t length, uint16_t address)
+uint8_t vw_crc_calc(uint8_t* inputBytes, uint8_t length, uint32_t address)
 {
     const uint8_t poly = 0x2F;
     const uint8_t xor_output = 0xFF;
@@ -190,7 +190,7 @@ uint8_t vw_crc_calc(uint8_t* inputBytes, uint8_t length, uint16_t address)
     return crc;
 }
 
-uint8_t vw_crc_calc_MQB(uint8_t* inputBytes, uint8_t length, uint16_t address)
+uint8_t vw_crc_calc_MQB(uint8_t* inputBytes, uint8_t length, uint32_t address)
 {
     
     // const uint8_t poly = 0x2F;
@@ -198,7 +198,7 @@ uint8_t vw_crc_calc_MQB(uint8_t* inputBytes, uint8_t length, uint16_t address)
 
     uint8_t crc = 0xFF;
     uint8_t magicByte = 0x00;
-    uint8_t counter = inputBytes[1] & 0x0F; // only the low byte of the counter is relevant
+    //uint8_t counter = inputBytes[1] & 0x0F; // only the low byte of the counter is relevant
 
     switch (address) 
     {
