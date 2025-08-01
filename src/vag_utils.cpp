@@ -24,7 +24,7 @@
 
 namespace vag_utils {
 
-uint8_t vw_crc_calc(uint8_t* inputBytes, uint8_t length, uint16_t address)
+uint8_t vw_crc_calc(uint8_t* inputBytes, uint8_t length, uint32_t address)
 {
     const uint8_t poly = 0x2F;
     const uint8_t xor_output = 0xFF;
@@ -123,44 +123,275 @@ uint8_t vw_crc_calc(uint8_t* inputBytes, uint8_t length, uint16_t address)
     uint8_t magicByte = 0x00;
     uint8_t counter = inputBytes[1] & 0x0F; // only the low byte of the counter is relevant
 
-    switch (address) 
+    switch (address)
     {
-    case 0x03C0: // ??
-        magicByte = MB03C0[counter];
-        break;
-    case 0x0040: // ??
+    case 0x0040: // MB0040
         magicByte = MB0040[counter];
-        break; 
-    case 0x0184: // ??
+        break;
+    case 0x0073: // MB0073
+        magicByte = MB0073[counter];
+        break;
+    case 0x0074: // MB0074
+        magicByte = MB0074[counter];
+        break;
+    case 0x0075: // MB0075
+        magicByte = MB0075[counter];
+        break;
+    case 0x0080: // MB0080
+        magicByte = MB0080[counter];
+        break;
+    case 0x0081: // MB0081
+        magicByte = MB0081[counter];
+        break;
+    case 0x0082: // MB0082
+        magicByte = MB0082[counter];
+        break;
+    case 0x0083: // MB0083
+        magicByte = MB0083[counter];
+        break;
+    case 0x0087: // MB0087
+        magicByte = MB0087[counter];
+        break;
+    case 0x0097: // MB0097
+        magicByte = MB0097[counter];
+        break;
+    case 0x009D: // MB009D
+        magicByte = MB009D[counter];
+        break;
+    case 0x00A0: // MB00A0
+        magicByte = MB00A0[counter];
+        break;
+    case 0x00A8: // MB00A8
+        magicByte = MB00A8[counter];
+        break;
+    case 0x00AA: // MB00AA
+        magicByte = MB00AA[counter];
+        break;
+    case 0x00AB: // MB00AB
+        magicByte = MB00AB[counter];
+        break;
+    case 0x00B1: // MB00B1
+        magicByte = MB00B1[counter];
+        break;
+    case 0x00B3: // MB00B3
+        magicByte = MB00B3[counter];
+        break;
+    case 0x0102: // MB0102
+        magicByte = MB0102[counter];
+        break;
+    case 0x0105: // MB0105
+        magicByte = MB0105[counter];
+        break;
+    case 0x0108: // MB0108
+        magicByte = MB0108[counter];
+        break;
+    case 0x010E: // MB010E
+        magicByte = MB010E[counter];
+        break;
+    case 0x0111: // MB0111
+        magicByte = MB0111[counter];
+        break;
+    case 0x0114: // MB0114
+        magicByte = MB0114[counter];
+        break;
+    case 0x0116: // MB0116
+        magicByte = MB0116[counter];
+        break;
+    case 0x0121: // MB0121
+        magicByte = MB0121[counter];
+        break;
+    case 0x0124: // MB0124
+        magicByte = MB0124[counter];
+        break;
+    case 0x0136: // MB0136
+        magicByte = MB0136[counter];
+        break;
+    case 0x0153: // MB0153
+        magicByte = MB0153[counter];
+        break;
+    case 0x0154: // MB0154
+        magicByte = MB0154[counter];
+        break;
+    case 0x0184: // MB0184
         magicByte = MB0184[counter];
         break;
-    case 0x0191: // ??
+    case 0x0187: // MB0187
+        magicByte = MB0187[counter];
+        break;
+    case 0x018D: // MB018D
+        magicByte = MB018D[counter];
+        break;
+    case 0x0191: // MB0191
         magicByte = MB0191[counter];
-        break; 
-    case 0x01A2: // ??
+        break;
+    case 0x01A2: // MB01A2
         magicByte = MB01A2[counter];
-        break;     
-    case 0x02AE: // ??
+        break;
+    case 0x01A3: // MB01A3
+        magicByte = MB01A3[counter];
+        break;
+    case 0x01F3: // MB01F3
+        magicByte = MB01F3[counter];
+        break;
+    case 0x01F9: // MB01F9
+        magicByte = MB01F9[counter];
+        break;
+    case 0x020F: // MB020F
+        magicByte = MB020F[counter];
+        break;
+    case 0x02AD: // MB02AD
+        magicByte = MB02AD[counter];
+        break;
+    case 0x02AE: // MB02AE
         magicByte = MB02AE[counter];
         break;
-    case 0x037C: // ??
+    case 0x030E: // MB030E
+        magicByte = MB030E[counter];
+        break;
+    case 0x0312: // MB0312
+        magicByte = MB0312[counter];
+        break;
+    case 0x031B: // MB031B
+        magicByte = MB031B[counter];
+        break;
+    case 0x0365: // MB0365
+        magicByte = MB0365[counter];
+        break;
+    case 0x0367: // MB0367
+        magicByte = MB0367[counter];
+        break;
+    case 0x037C: // MB037C
         magicByte = MB037C[counter];
-        break;    
-    case 0x0503: // ??
+        break;
+    case 0x0393: // MB0393
+        magicByte = MB0393[counter];
+        break;
+    case 0x0394: // MB0394
+        magicByte = MB0394[counter];
+        break;
+    case 0x03A6: // MB03A6
+        magicByte = MB03A6[counter];
+        break;
+    case 0x03AF: // MB03AF
+        magicByte = MB03AF[counter];
+        break;
+    case 0x03BE: // MB03BE
+        magicByte = MB03BE[counter];
+        break;
+    case 0x03C0: // MB03C0
+        magicByte = MB03C0[counter];
+        break;
+    case 0x03F4: // MB03F4
+        magicByte = MB03F4[counter];
+        break;
+    case 0x03FA: // MB03FA
+        magicByte = MB03FA[counter];
+        break;
+    case 0x0450: // MB0450
+        magicByte = MB0450[counter];
+        break;
+    case 0x0451: // MB0451
+        magicByte = MB0451[counter];
+        break;
+    case 0x0452: // MB0452
+        magicByte = MB0452[counter];
+        break;
+    case 0x0457: // MB0457
+        magicByte = MB0457[counter];
+        break;
+    case 0x0489: // MB0489
+        magicByte = MB0489[counter];
+        break;
+    case 0x0503: // MB0503
         magicByte = MB0503[counter];
-        break; 
-    case 0x0578: // ??
+        break;
+    case 0x0504: // MB0504
+        magicByte = MB0504[counter];
+        break;
+    case 0x053C: // MB053C
+        magicByte = MB053C[counter];
+        break;
+    case 0x0560: // MB0560
+        magicByte = MB0560[counter];
+        break;
+    case 0x0564: // MB0564
+        magicByte = MB0564[counter];
+        break;
+    case 0x0578: // MB0578
         magicByte = MB0578[counter];
-        break;    
-    case 0x05A2: // ??
+        break;
+    case 0x05A2: // MB05A2
         magicByte = MB05A2[counter];
-        break;   
-    case 0x05CA: // ??
+        break;
+    case 0x05A3: // MB05A3
+        magicByte = MB05A3[counter];
+        break;
+    case 0x05CA: // MB05CA
         magicByte = MB05CA[counter];
-        break;   
-    case 0x05CD: // ??
+        break;
+    case 0x05CC: // MB05CC
+        magicByte = MB05CC[counter];
+        break;
+    case 0x05CD: // MB05CD
         magicByte = MB05CD[counter];
-        break; 
+        break;
+    case 0x0641: // MB0641
+        magicByte = MB0641[counter];
+        break;
+    case 0x065D: // MB065D
+        magicByte = MB065D[counter];
+        break;
+    case 0x067E: // MB067E
+        magicByte = MB067E[counter];
+        break;
+    case 0x06A3: // MB06A3
+        magicByte = MB06A3[counter];
+        break;
+    case 0x06A4: // MB06A4
+        magicByte = MB06A4[counter];
+        break;
+    case 0x092DD5477: // MB092DD5477
+        magicByte = MB092DD5477[counter];
+        break;
+    case 0x092DD5478: // MB092DD5478
+        magicByte = MB092DD5478[counter];
+        break;
+    case 0x092DD5490: // MB092DD5490
+        magicByte = MB092DD5490[counter];
+        break;
+    case 0x092DD5491: // MB092DD5491
+        magicByte = MB092DD5491[counter];
+        break;
+    case 0x092DD5493: // MB092DD5493
+        magicByte = MB092DD5493[counter];
+        break;
+    case 0x092DD54AB: // MB092DD54AB
+        magicByte = MB092DD54AB[counter];
+        break;
+    case 0x092DD54AD: // MB092DD54AD
+        magicByte = MB092DD54AD[counter];
+        break;
+    case 0x092DD54E0: // MB092DD54E0
+        magicByte = MB092DD54E0[counter];
+        break;
+    case 0x092DD550B: // MB092DD550B
+        magicByte = MB092DD550B[counter];
+        break;
+    case 0x096A95414: // MB096A95414
+        magicByte = MB096A95414[counter];
+        break;
+    case 0x096A95415: // MB096A95415
+        magicByte = MB096A95415[counter];
+        break;
+    case 0x096A954A6: // MB096A954A6
+        magicByte = MB096A954A6[counter];
+        break;
+    case 0x09A555517: // MB09A555517
+        magicByte = MB09A555517[counter];
+        break;
+    case 0x09A555545: // MB09A555545
+        magicByte = MB09A555545[counter];
+        break;
     default: // this won't lead to correct CRC checksums
         magicByte = 0x00;
         break;
