@@ -40,7 +40,7 @@ struct ChargerStatus {
     uint16_t ACvoltage;
     uint16_t HVVoltage;
     int8_t temperature;
-    uint8_t mode;
+    uint8_t mode; // 0=Standby, 1=AC charging, 3=DC charging, 4=Precharge, 5=Fail, 7=Init
     uint16_t current;
     uint8_t MaxACAmps;
     uint8_t PPLim;

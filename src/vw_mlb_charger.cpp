@@ -569,6 +569,8 @@ void VWMLBClass::DecodeCAN(int id, uint32_t data[2])
         break;
 
     case 0X564: // LAD_01
+        // SerialDEBUG.print("Current charger mode: ");
+        // 0=standby,1=AC charging,3=DC charging,4=Precharge,5=Fail,7=init
         charger_status.mode = ((bytes[1] >> 4) & (0x07U));
         charger_status.ACvoltage = ((bytes[2] & (0xFFU)) << 1) | ((bytes[1] >> 7) & (0x01U));
         charger_status.HVVoltage = (((bytes[4] & (0x03U)) << 8) | (bytes[3] & (0xFFU)));
