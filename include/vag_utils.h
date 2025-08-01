@@ -28,8 +28,8 @@
  
  namespace vag_utils
  {
-   uint8_t vw_crc_calc(uint8_t* inputBytes, uint8_t length, uint32_t address);
-    uint8_t vw_crc_calc_MQB(uint8_t* inputBytes, uint8_t length, uint16_t address);
+    uint8_t vw_crc_calc(uint8_t* inputBytes, uint8_t length, uint32_t address);
+    uint8_t vw_crc_calc_MQB(uint8_t* inputBytes, uint8_t length, uint32_t address);
  }
  
  #endif
