@@ -267,7 +267,7 @@
     VALUE_ENTRY(mlb_chr_ChargerErrorStatus, HVLM_ERRORSTATUS, 2120)                           \
     VALUE_ENTRY(mlb_chr_PlugStatus, HVLM_PLUGSTATUS, 2121)                                   \
     VALUE_ENTRY(mlb_chr_LoadRequest, HVLM_LOADREQ, 2122)                                  \
-    VALUE_ENTRY(mlb_chr_ChargerState, "dig", 2123)                                 \
+    VALUE_ENTRY(mlb_chr_ChargerState, HVLM_CHARGERMODE, 2123)                                 \
     VALUE_ENTRY(mlb_chr_Charger_AC_Volt_RMS, "V", 2124)                            \
     VALUE_ENTRY(mlb_chr_Charger_VoltageOut_HV, "V", 2125)                          \
     VALUE_ENTRY(mlb_chr_Charger_CurrentOut_HV, "A", 2126)                          \
@@ -383,6 +383,7 @@
 #define HVLM_CONNECTORLOCK "0=Unlock, 1=Lock, 2=Init, 3=No Request"
 #define HVLM_VOLTMEAS "0=Inactive, 1=DCLS With Diode, 2=DCLS Without Diode, 3=Reserved"
 #define HVLM_CHGREADY "0=No Error, 1=AC Not Possible, 2=DC Not Possible, 3=AC & DC Not Possible"
+#define HVLM_CHARGERMODE "0=Standby, 1=AC charging, 3=DC charging, 4=Precharge, 5=Fail, 7=Init"
 
 #define CAN_PERIOD_100MS 0
 #define CAN_PERIOD_10MS 1
