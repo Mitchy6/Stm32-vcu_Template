@@ -658,14 +658,16 @@ static void Ms10Task(void)
     selectedVehicle->Task10Ms();
     selectedDCDC->Task10Ms();
     selectedShifter->Task10Ms();
-    if(opmode==MOD_CHARGE)
-    {
-        selectedCharger->Task10Ms();
-    }
-    else if (Param::GetInt(Param::chargemodes) == ChargeModes::Leaf_PDM)
-    {
-        selectedCharger->Task10Ms();
-    }
+    selectedCharger->Task10Ms();
+    // if(opmode==MOD_CHARGE) -> modellfan: this looks like a bug for me. 100ms and 1ms task time are given without condition. We also need 100ms even if charger not activated.
+    // {
+    //     selectedCharger->Task10Ms();
+    // }
+    // else if (Param::GetInt(Param::chargemodes) == ChargeModes::Leaf_PDM)
+    // {
+    //     selectedCharger->Task10Ms();
+    // }
+
     if(opmode==MOD_RUN) Param::SetInt(Param::canctr, (Param::GetInt(Param::canctr) + 1) & 0xF);//Update the OI can counter in RUN mode only
 
     //////////////////////////////////////////////////
