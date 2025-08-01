@@ -95,7 +95,6 @@ struct ChargerControl {
     uint16_t HVpwr = 0;
     uint16_t HVcur = 0;
     uint16_t calcpwr = 0;
-    uint8_t modeSet;
     bool activate;
     uint8_t HVActiveDelayOff;
 };

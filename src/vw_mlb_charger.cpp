@@ -302,6 +302,7 @@ void VWMLBClass::TagParams() // To make code portable between standalone (more p
     battery_status.BMS_Cell_H_mV = Param::GetInt(Param::mlb_chr_sim_BMS_Cell_H_mV);
     battery_status.BMS_Cell_L_mV = Param::GetInt(Param::mlb_chr_sim_BMS_Cell_L_mV);
     vehicle_status.locked = Param::GetInt(Param::mlb_chr_sim_Lock); //was before mlb_state.ZV_verriegelt_extern_ist = ...
+    charger_params.activate = Param::GetInt(Param::mlb_chr_sim_Activation_Crg);
 #else
     // normal operation mode with parameters exchange. and reduced parameter set
     battery_status.SOCx10 = int(Param::GetFloat(Param::SOC) * 10);
