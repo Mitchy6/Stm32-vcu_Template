@@ -102,14 +102,14 @@ struct ChargerControl {
 struct BatteryStatus {
     uint16_t SOCx10;         // SOC of battery, with implied decimal place
     uint16_t SOC_Targetx10;  // target SOC of battery, with implied decimal place
-    uint16_t CapkWhx10;      // usable energy content of the HV battery
-    uint16_t BattkWhx10;     // current energy content of the HV battery
-    uint16_t BMSVoltx10;     // BMS voltage of battery
-    uint16_t BMSCurrx10;     // BMS current of battery, with implied decimal place
-    uint16_t BMSMaxVolt;     // BMS maximum battery voltage
-    uint16_t BMSMinVolt;     // BMS minimum battery voltage
-    uint16_t BMSMaxChargeCurr;  // BMS maximum charge current
-    uint16_t BMSBattCellSumx10;
+    uint16_t CapkWhx10 = 365;      // usable energy content of the HV battery
+    uint16_t BattkWhx10 = 273;     // current energy content of the HV battery
+    uint16_t BMSVoltx10 = 4100;     // BMS voltage of battery
+    uint16_t BMSCurrx10 =1256;     // BMS current of battery, with implied decimal place
+    uint16_t BMSMaxVolt=400;     // BMS maximum battery voltage
+    uint16_t BMSMinVolt=0;     // BMS minimum battery voltage
+    uint16_t BMSMaxChargeCurr=300;  // BMS maximum charge current
+    uint16_t BMSBattCellSumx10=0;
     uint16_t BMSCellAhx10 = 1080;
     uint8_t HV_Status;       // 0=Init (no function), 1=BMS HV free (<20V), 2=BMS HV active (>=25V), 3=Error
     uint8_t BMS_Status;      // 0 "Component_OK" 1 "Limited_CompFct_Isoerror_I" 2 "Limited_CompFct_Isoerror_II" 3 "Limited_CompFct_Interlock" 4 "Limited_CompFct_SD" 5 "Limited_CompFct_Powerred" 6 "No_component_function" 7 "Init"

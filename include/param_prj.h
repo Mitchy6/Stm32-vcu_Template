@@ -19,7 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define VER 2.34.TB
+#define VER 2.35.TB
 
 #define MLB_CHARGER_STANDALONE
 
@@ -287,14 +287,15 @@
     VALUE_ENTRY(mlb_chr_ChargerWarning, "dig", 2140)                               \
     VALUE_ENTRY(mlb_chr_ChargerFault, "dig", 2141)                                 \
     VALUE_ENTRY(mlb_chr_OutputVolts, "V", 2142)                                    \
+    VALUE_ENTRY(mlb_chr_ActivationState, "dig", 2143)                                    \
                                                                                    \
     PARAM_ENTRY(CAT_MLB_SIM, mlb_chr_sim_SOC, "%", 0, 100, 50, 153)               \
     PARAM_ENTRY(CAT_MLB_SIM, mlb_chr_sim_SOC_Target, "%", 0, 100, 100, 154)       \
-    PARAM_ENTRY(CAT_MLB_SIM, mlb_chr_sim_BMSMinVolt, "V", 0, 1000, 300, 155)       \
+    PARAM_ENTRY(CAT_MLB_SIM, mlb_chr_sim_BMSMinVolt, "V", 0, 1000, 0, 155)       \
     PARAM_ENTRY(CAT_MLB_SIM, mlb_chr_sim_IDCSetpnt, "A", 0, 200, 10, 156)          \
     PARAM_ENTRY(CAT_MLB_SIM, mlb_chr_sim_HVDCSetpnt, "V", 0, 1000, 400, 157)       \
     PARAM_ENTRY(CAT_MLB_SIM, mlb_chr_sim_BMSBattCellSum, "V", 0, 1000, 350, 158)   \
-    PARAM_ENTRY(CAT_MLB_SIM, mlb_chr_sim_BMSMaxVolt, "V", 0, 1000, 450, 159)       \
+    PARAM_ENTRY(CAT_MLB_SIM, mlb_chr_sim_BMSMaxVolt, "V", 0, 400, 400, 159)       \
     PARAM_ENTRY(CAT_MLB_SIM, mlb_chr_sim_BMS_Cell_H_Temp, "°C", -40, 100, 25, 160) \
     PARAM_ENTRY(CAT_MLB_SIM, mlb_chr_sim_BMS_Cell_L_Temp, "°C", -40, 100, 20, 161) \
     PARAM_ENTRY(CAT_MLB_SIM, mlb_chr_sim_BMS_Cell_H_mV, "mV", 0, 5000, 4200, 162)  \

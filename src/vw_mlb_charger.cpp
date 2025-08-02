@@ -20,7 +20,7 @@
 #include <vw_mlb_charger.h>
 #include "params.h"
 
-#define MLB_CHARGER_STANDALONE //Comment out to run in Zombie integrated mode
+#define MLB_CHARGER_STANDALONE // Comment out to run in Zombie integrated mode
 
 /*CAN send information flow path:
 
@@ -114,12 +114,10 @@
 +----------+----------+
 */
 
-
-
 bool VWMLBClass::ControlCharge(bool RunCh, bool ACReq)
 {
-(void) ACReq;
-(void) RunCh;
+    (void)ACReq;
+    (void)RunCh;
 #ifdef MLB_CHARGER_STANDALONE
     /*
      * In simulation mode the activation request is supplied via parameter
@@ -247,7 +245,7 @@ void VWMLBClass::Task100Ms()
     }
 }
 
-void VWMLBClass::TagParams() // To make code portable between standalone (more params) vs Zombie (basic params) 
+void VWMLBClass::TagParams() // To make code portable between standalone (more params) vs Zombie (basic params)
 {
 
     // copy charger state into values
@@ -283,6 +281,7 @@ void VWMLBClass::TagParams() // To make code portable between standalone (more p
     Param::SetInt(Param::mlb_chr_ChargerWarning, charger_status.LAD_ChargerWarning);
     Param::SetInt(Param::mlb_chr_ChargerFault, charger_status.LAD_ChargerFault);
     Param::SetInt(Param::mlb_chr_OutputVolts, charger_status.HVLM_Output_Voltage_HV);
+    Param::SetInt(Param::mlb_chr_ActivationState, charger_params.activate);
 
 #ifdef MLB_CHARGER_STANDALONE
     // in standalone mode the vw mlb charger class has no interaction with other class of zombie e.g. via parameters.
@@ -301,7 +300,7 @@ void VWMLBClass::TagParams() // To make code portable between standalone (more p
     battery_status.BMS_Cell_L_Tempx10 = Param::GetInt(Param::mlb_chr_sim_BMS_Cell_L_Temp) * 10;
     battery_status.BMS_Cell_H_mV = Param::GetInt(Param::mlb_chr_sim_BMS_Cell_H_mV);
     battery_status.BMS_Cell_L_mV = Param::GetInt(Param::mlb_chr_sim_BMS_Cell_L_mV);
-    vehicle_status.locked = Param::GetInt(Param::mlb_chr_sim_Lock); //was before mlb_state.ZV_verriegelt_extern_ist = ...
+    vehicle_status.locked = Param::GetInt(Param::mlb_chr_sim_Lock); // was before mlb_state.ZV_verriegelt_extern_ist = ...
     charger_params.activate = Param::GetInt(Param::mlb_chr_sim_Activation_Crg);
 #else
     // normal operation mode with parameters exchange. and reduced parameter set
@@ -321,7 +320,7 @@ void VWMLBClass::TagParams() // To make code portable between standalone (more p
     battery_status.BMS_Cell_L_mV = int(Param::GetFloat(Param::BMS_Vmin) * 100);
     vehicle_status.locked = Param::GetInt(Param::VehLockSt);
 
-    //backward mapping into ZombieVCU
+    // backward mapping into ZombieVCU
     Param::SetInt(Param::CableLim, charger_status.MaxACAmps);
     Param::SetInt(Param::AC_Volts, charger_status.ACvoltage);
     Param::SetInt(Param::ChgTemp, charger_status.temperature);
@@ -361,19 +360,19 @@ void VWMLBClass::TagParams() // To make code portable between standalone (more p
 
 void VWMLBClass::CalcValues100ms() // Run to calculate values every 100 ms
 {
-    // BMS charge current limit but needs to be power for most AC charger types.
-    if (charger_params.HVcur > 1000)
-    {
-        charger_params.calcpwr = 12000;
-    }
-    else
-    {
-        charger_params.calcpwr = charger_params.HVcur * (battery_status.BMSVoltx10 / 10);
-    }
+    // // BMS charge current limit but needs to be power for most AC charger types.
+    // if (charger_params.HVcur > 1000)
+    // {
+    //     charger_params.calcpwr = 12000;
+    // }
+    // else
+    // {
+    //     charger_params.calcpwr = charger_params.HVcur * (battery_status.BMSVoltx10 / 10);
+    // }
 
-    charger_params.HVpwr = MIN(charger_params.HVpwr, charger_params.calcpwr);
+    // charger_params.HVpwr = MIN(charger_params.HVpwr, charger_params.calcpwr);
 
-    charger_params.IDCSetpnt = charger_params.HVpwr / (battery_status.BMSVoltx10 / 10);
+    // charger_params.IDCSetpnt = charger_params.HVpwr / (battery_status.BMSVoltx10 / 10);
 
     emulateMLB();
 }
@@ -398,7 +397,7 @@ void VWMLBClass::emulateMLB()
 
     // BMS SOC:
     mlb_state.BMS_Batt_Curr = charger_status.current + 2047;
-    mlb_state.BMS_SOC = battery_status.SOCx10 * .05;
+    mlb_state.BMS_SOC = battery_status.SOCx10 / 5;
     mlb_state.BMS_SOC_HiRes = battery_status.SOCx10 * 2;
     mlb_state.BMS_SOC_Kaltstart = battery_status.SOCx10 * 2;
     mlb_state.BMS_Batt_Energy = battery_status.CapkWhx10 * 2;
@@ -427,13 +426,13 @@ void VWMLBClass::emulateMLB()
     mlb_state.BMS_Min_Batt_Volt_Discharge = battery_status.BMSMinVolt;
 
     // BMS Limits Charge:
-    mlb_state.BMS_MaxCharge_Curr = 1500;
+    mlb_state.BMS_MaxCharge_Curr = charger_params.IDCSetpnt;
     mlb_state.HVEM_SollStrom_HV = (charger_params.IDCSetpnt + 205) * 5;
     mlb_state.BMS_Batt_Max_Volt = charger_params.HVDCSetpnt;
     mlb_state.BMS_Min_Batt_Volt_Charge = battery_status.BMSMinVolt;
-    mlb_state.BMS_OpenCircuit_Volts = battery_status.BMSBattCellSumx10;
+    mlb_state.BMS_OpenCircuit_Volts = battery_status.BMSBattCellSumx10 / 10;
     mlb_state.HVEM_MaxSpannung_HV = battery_status.BMSMaxVolt;
-    mlb_state.BMS_Faultstatus = battery_status.BMS_Status;
+    mlb_state.BMS_Faultstatus = battery_status.BMS_Status; // Todo
     mlb_state.BMS_Batt_Ah = (battery_status.CapkWhx10 * 100) / 350;
     mlb_state.BMS_Target_SOC_HiRes = battery_status.SOC_Targetx10 * 2;
 
@@ -441,84 +440,166 @@ void VWMLBClass::emulateMLB()
     mlb_state.HMS_Systemstatus = 3;   // 0 "No_function_active" 1 "Hold_active" 2 "Parking_requested" 3 "Parking_active" 4 "Keep parking_active" 5 "Start_active" 6 "Release_request_active" 7 "Release_request_by_driver" 8 "Slipping_detected" 9 "Hold_standby_active" 10 "Start_standby_active" 14 "Init" 15 "Error " ;
     mlb_state.HMS_aktives_System = 6; // 0 "No_System__Init_Error" 1 "Driver request_active" 2 "HMS_internal_active" 3 "ACC_active" 4 "Autohold_active" 5 "HHC_active" 6 "HVLM_active" 7 "Getriebe_aktiv" 8 "EBKV_aktiv" 9 "ParkAssist_aktiv" 10 "ARA_aktiv" 12 "Autonomous_Hold_aktiv" 13 "STA_aktiv " 14 "Motor_aktiv" 15 "EA_aktiv" 16 "VLK_aktiv" ;
 
-    // Lock Status:
-    if (vehicle_status.locked == 0)
+    // // Lock Status:
+    // if (vehicle_status.locked == 0)
+    // {
+    //     mlb_state.ZV_verriegelt_soll = 1;
+    // }
+    // if (vehicle_status.locked == 1)
+    // {
+    //     mlb_state.ZV_verriegelt_soll = 2;
+    // }
+
+    // // Charger Activation State Logic:
+    // if (charger_status.HVLM_HV_ActivationRequest == 1)
+    // {
+    //     mlb_state.HV_Bordnetz_aktiv = true; // Indicates an active high-voltage vehicle electrical system: 0 = Not Active,  1 = Active
+    //     // HVK_BMS_Sollmodus = 4;
+    //     mlb_state.BMS_IstModus = 4;  // 0=Standby, 1=HV Active (Driving) 2=Balancing 4=AC charge, 6=DC charge, 7=init
+    //     mlb_state.BMS_HV_Status = 2; // HV System Voltage Detected  // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
+    //     mlb_state.HVK_MO_EmSollzustand = 50;
+    //     mlb_state.BMS_Charger_Active = 1;
+    //     charger_params.HVActiveDelayOff = 20;
+    // }
+
+    // if (charger_status.HVLM_HV_ActivationRequest == 0)
+    // {
+    //     mlb_state.BMS_Charger_Active = 0;
+    //     if (charger_params.HVActiveDelayOff >= 1)
+    //     {
+    //         mlb_state.BMS_HV_Status = 2; // HV No Voltage // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
+    //         mlb_state.BMS_IstModus = 1;  // 0=Standby, 1=HV Active (Driving) 2=Balancing 4=AC charge, 6=DC charge, 7=init
+    //         mlb_state.HVK_BMS_Sollmodus = 1;
+    //         mlb_state.HVK_MO_EmSollzustand = 67;
+    //         charger_params.HVActiveDelayOff = charger_params.HVActiveDelayOff - 1;
+    //     }
+
+    //     if (charger_params.HVActiveDelayOff == 0)
+    //     {
+    //         //   mlb_state.HV_Bordnetz_aktiv = false; // Indicates an active high-voltage vehicle electrical system: 0 = Not Active,  1 = Active
+    //         //   mlb_state.BMS_HV_Status = 1; // HV No Voltage // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
+    //         //   mlb_state.BMS_IstModus = 0; // 0=Standby, 1=HV Active (Driving) 2=Balancing 4=AC charge, 6=DC charge, 7=init
+    //         //   mlb_state.HVK_BMS_Sollmodus = 0;
+    //         //   mlb_state.HVK_MO_EmSollzustand = 0;
+    //         //   mlb_state.BMS_Batt_Volt = charger_status.HVVoltage*4; // Modify after testing to actual values from BMS/VCU
+    //         //   mlb_state.BMS_Batt_Volt_HVterm = charger_status.HVVoltage*2; // Modify after testing to actual values from BMS/VCU
+
+    //         mlb_state.BMS_HV_Status = 2; // Voltage Applied // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
+    //         mlb_state.BMS_IstModus = 1;  // 0=Standby, 1=HV Active (Driving) 2=Balancing 4=AC charge, 6=DC charge, 7=init
+    //         mlb_state.HVK_BMS_Sollmodus = 1;
+    //         mlb_state.HVK_MO_EmSollzustand = 67;
+    //     }
+    // }
+
+    // if (mlb_state.BMS_HV_Status == 1)
+    // {
+    //     mlb_state.HVK_DCDC_Sollmodus = 2;       // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
+    //     mlb_state.EM1_Status_Spgfreiheit = 2;   // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
+    //     mlb_state.HVK_Gesamtst_Spgfreiheit = 2; // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
+    // }
+    // if (mlb_state.BMS_HV_Status == 0)
+    // {
+    //     mlb_state.HVK_DCDC_Sollmodus = 1;       // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
+    //     mlb_state.EM1_Status_Spgfreiheit = 1;   // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
+    //     mlb_state.HVK_Gesamtst_Spgfreiheit = 1; // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
+    // }
+
+    // switch (charger_params.activate)
+    // {
+    // case 0:
+    //     mlb_state.HVEM_Nachladen_Anf = false; // Request for HV charging with plugged in connector and deactivated charging request
+    //     mlb_state.HVK_HVLM_Sollmodus = false; // Requested target mode of the charging manager: 0=Not Enabled, 1=Enabled
+    //     mlb_state.BMS_Charger_Active = 0;
+    //     break;
+
+    // case 1:
+    //     mlb_state.HVEM_Nachladen_Anf = true; // Request for HV charging with plugged in connector and deactivated charging request
+    //     mlb_state.HVK_HVLM_Sollmodus = true; // Requested target mode of the charging manager: 0=Not Enabled, 1=Enabled
+    //     mlb_state.BMS_Charger_Active = 1;
+    //     mlb_state.HVK_BMS_Sollmodus = 4;
+    //     break;
+    // }
+
+    mlb_state.HVEM_Nachladen_Anf = false; // Request for HV charging with plugged in connector and deactivated charging request
+    // HVEM_SollStrom_HV =;  // Target current charging on the HV side
+    // HVEM_MaxSpannung_HV =; // Maximum charging voltage to the charger or DC charging station
+
+    if (charger_status.HVLM_Park_Request == 1)
     {
-        mlb_state.ZV_verriegelt_soll = 1;
-    }
-    if (vehicle_status.locked == 1)
-    {
-        mlb_state.ZV_verriegelt_soll = 2;
+        if (mlb_state.HMS_Systemstatus == 2)
+        {
+            mlb_state.HMS_Systemstatus = 3;
+        }
+        else
+        {
+            mlb_state.HMS_Systemstatus = 2; // 0 "No_function_active" 1 "Hold_active" 2 "Parking_requested" 3 "Parking_active" 4 "Keep parking_active" 5 "Start_active" 6 "Release_request_active" 7 "Release_request_by_driver" 8 "Slipping_detected" 9 "Hold_standby_active" 10 "Start_standby_active" 14 "Init" 15 "Error " ;
+        }
+        if (mlb_state.HMS_Systemstatus < 1)
+        {
+            mlb_state.HMS_aktives_System = 6; // 0 "No_System__Init_Error" 1 "Driver request_active" 2 "HMS_internal_active" 3 "ACC_active" 4 "Autohold_active" 5 "HHC_active" 6 "HVLM_active" 7 "Getriebe_aktiv" 8 "EBKV_aktiv" 9 "ParkAssist_aktiv" 10 "ARA_aktiv" 12 "Autonomous_Hold_aktiv" 13 "STA_aktiv " 14 "Motor_aktiv" 15 "EA_aktiv" 16 "VLK_aktiv" ;
+        }
+        else
+        {
+            mlb_state.HMS_aktives_System = 0;
+        }
+        // HMS_Fehlerstatus = false; //0 "No error" 1 "Stopping_not_possible" 2 "Special operating mode_active" 3 "System restriction" 4 "System fault" ;
     }
 
-    // Charger Activation State Logic:
     if (charger_status.HVLM_HV_ActivationRequest == 1)
     {
         mlb_state.HV_Bordnetz_aktiv = true; // Indicates an active high-voltage vehicle electrical system: 0 = Not Active,  1 = Active
-        mlb_state.BMS_IstModus = 4;         // 0=Standby, 1=HV Active (Driving) 2=Balancing 4=AC charge, 6=DC charge, 7=init
-        mlb_state.BMS_HV_Status = 2;        // HV System Voltage Detected  // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
+        mlb_state.HVK_BMS_Sollmodus = 4;
+        mlb_state.BMS_IstModus = 4;  // 0=Standby, 1=HV Active (Driving) 2=Balancing 4=AC charge, 6=DC charge, 7=init
+        mlb_state.BMS_HV_Status = 2; // HV System Voltage Detected  // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
         mlb_state.HVK_MO_EmSollzustand = 50;
         mlb_state.BMS_Charger_Active = 1;
-        charger_params.HVActiveDelayOff = 20;
+        mlb_state.BMS_Batt_Volt = 400 * 4;
+        mlb_state.BMS_Batt_Volt_HVterm = 400 * 2;
+        if (charger_status.HVVoltage > 250)
+        {
+            mlb_state.BMS_Batt_Volt = (charger_status.HVVoltage) * 4;
+            mlb_state.BMS_Batt_Volt_HVterm = (charger_status.HVVoltage) * 2;
+        }
     }
 
     if (charger_status.HVLM_HV_ActivationRequest == 0)
     {
+        mlb_state.HV_Bordnetz_aktiv = false; // Indicates an active high-voltage vehicle electrical system: 0 = Not Active,  1 = Active
+        mlb_state.HVK_BMS_Sollmodus = 0;
+        mlb_state.BMS_IstModus = 0;  // 0=Standby, 1=HV Active (Driving) 2=Balancing 4=AC charge, 6=DC charge, 7=init
+        mlb_state.BMS_HV_Status = 1; // HV No Voltage // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
+        mlb_state.HVK_MO_EmSollzustand = 50;
         mlb_state.BMS_Charger_Active = 0;
-        if (charger_params.HVActiveDelayOff >= 1)
-        {
-            mlb_state.BMS_HV_Status = 2; // HV No Voltage // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
-            mlb_state.BMS_IstModus = 1;  // 0=Standby, 1=HV Active (Driving) 2=Balancing 4=AC charge, 6=DC charge, 7=init
-            mlb_state.HVK_BMS_Sollmodus = 1;
-            mlb_state.HVK_MO_EmSollzustand = 67;
-            charger_params.HVActiveDelayOff = charger_params.HVActiveDelayOff - 1;
-        }
-
-        if (charger_params.HVActiveDelayOff == 0)
-        {
-            //   mlb_state.HV_Bordnetz_aktiv = false; // Indicates an active high-voltage vehicle electrical system: 0 = Not Active,  1 = Active
-            //   mlb_state.BMS_HV_Status = 1; // HV No Voltage // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
-            //   mlb_state.BMS_IstModus = 0; // 0=Standby, 1=HV Active (Driving) 2=Balancing 4=AC charge, 6=DC charge, 7=init
-            //   mlb_state.HVK_BMS_Sollmodus = 0;
-            //   mlb_state.HVK_MO_EmSollzustand = 0;
-            //   mlb_state.BMS_Batt_Volt = charger_status.HVVoltage*4; // Modify after testing to actual values from BMS/VCU
-            //   mlb_state.BMS_Batt_Volt_HVterm = charger_status.HVVoltage*2; // Modify after testing to actual values from BMS/VCU
-
-            mlb_state.BMS_HV_Status = 2; // Voltage Applied // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
-            mlb_state.BMS_IstModus = 1;  // 0=Standby, 1=HV Active (Driving) 2=Balancing 4=AC charge, 6=DC charge, 7=init
-            mlb_state.HVK_BMS_Sollmodus = 1;
-            mlb_state.HVK_MO_EmSollzustand = 67;
-        }
+        mlb_state.BMS_Batt_Volt = (charger_status.HVVoltage) * 4;
+        mlb_state.BMS_Batt_Volt_HVterm = (charger_status.HVVoltage) * 2;
     }
 
-    if (mlb_state.BMS_HV_Status == 2)
-    {
-        mlb_state.HVK_DCDC_Sollmodus = 2;
-        mlb_state.EM1_Status_Spgfreiheit = 2;
-        mlb_state.HVK_Gesamtst_Spgfreiheit = 2;
-    }
     if (mlb_state.BMS_HV_Status == 1)
     {
-        mlb_state.HVK_DCDC_Sollmodus = 1;
-        mlb_state.EM1_Status_Spgfreiheit = 1;
-        mlb_state.HVK_Gesamtst_Spgfreiheit = 1;
+        mlb_state.HVK_DCDC_Sollmodus = 2;       // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
+        mlb_state.EM1_Status_Spgfreiheit = 2;   // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
+        mlb_state.HVK_Gesamtst_Spgfreiheit = 2; // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
+    }
+    if (mlb_state.BMS_HV_Status == 0)
+    {
+        mlb_state.HVK_DCDC_Sollmodus = 1;       // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
+        mlb_state.EM1_Status_Spgfreiheit = 1;   // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
+        mlb_state.HVK_Gesamtst_Spgfreiheit = 1; // Voltage Status: 0=Init, 1=NoVoltage, 2=Voltage, 3=Fault & Voltage
     }
 
     switch (charger_params.activate)
     {
-    case 0:
-        mlb_state.HVK_HVLM_Sollmodus = false;
-        mlb_state.HVEM_Nachladen_Anf = false;
-        mlb_state.BMS_Charger_Active = 0;
+    case 0:                         // Charger Standby
+        mlb_state.HVK_HVLM_Sollmodus = false; // Requested target mode of the charging manager: 0=Not Enabled, 1=Enabled
         break;
 
-    case 1:
-        mlb_state.HVEM_Nachladen_Anf = true;
-        mlb_state.HVK_HVLM_Sollmodus = true;
-        mlb_state.BMS_Charger_Active = 1;
-        mlb_state.HVK_BMS_Sollmodus = 4;
+    case 1: // HV Active - Charger Active
+        // HVEM_Nachladen_Anf = true; // Request for HV charging with plugged in connector and deactivated charging request
+        mlb_state.HVK_HVLM_Sollmodus = true; // Requested target mode of the charging manager: 0=Not Enabled, 1=Enabled
+
         break;
     }
+    // HMS_Fehlerstatus = false; //0 "No error" 1 "Stopping_not_possible" 2 "Special operating mode_active" 3 "System restriction" 4 "System fault" ;
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------
