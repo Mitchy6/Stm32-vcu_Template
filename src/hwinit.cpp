@@ -78,7 +78,7 @@ void clock_setup(void)
 void spi2_setup()   //spi 2 used for CAN3
 {
 
-    spi_init_master(SPI2, SPI_CR1_BAUDRATE_FPCLK_DIV_32, SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
+    spi_init_master(SPI2, SPI_CR1_BAUDRATE_FPCLK_DIV_8, SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
                     SPI_CR1_CPHA_CLK_TRANSITION_1, SPI_CR1_DFF_8BIT, SPI_CR1_MSBFIRST);
     spi_set_standard_mode(SPI2,0);//set mode 0
 
@@ -167,10 +167,16 @@ void nvic_setup(void)
     nvic_set_priority(NVIC_USB_HP_CAN_TX_IRQ, 0xe << 4); //second lowest priority
 
     /* Enable MCP2526 IRQ on PE15 */
-    nvic_enable_irq(NVIC_EXTI15_10_IRQ);
+    // nvic_enable_irq(NVIC_EXTI15_10_IRQ);
     exti_enable_request(EXTI15);
     exti_set_trigger(EXTI15, EXTI_TRIGGER_FALLING);
     exti_select_source(EXTI15,GPIOE);
+
+    /* Enable MCP2518 IRQ on PE9 */
+    exti_enable_request(EXTI9);
+    exti_set_trigger(EXTI9, EXTI_TRIGGER_FALLING);
+    exti_select_source(EXTI9,GPIOE);
+
     /* Without this the RTC interrupt routine will never be called. */
     nvic_enable_irq(NVIC_RTC_IRQ);
     nvic_set_priority(NVIC_RTC_IRQ, 0x20);

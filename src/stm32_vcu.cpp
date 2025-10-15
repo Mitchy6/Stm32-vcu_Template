@@ -29,6 +29,7 @@
 #include <libopencm3/stm32/iwdg.h>
 #include <libopencm3/stm32/spi.h>
 #include <libopencm3/stm32/exti.h>
+#include <libopencm3/cm3/nvic.h>
 #include "stm32_can.h"
 #include "terminal.h"
 #include "params.h"
@@ -110,6 +111,7 @@
 #include "compressor.h"
 #include "noCompressor.h"
 #include "OutlanderCompressor.h"
+#include "CANSPI_FD.h"
 
 #define PRECHARGE_TIMEOUT 5  //5s
 
@@ -390,6 +392,29 @@ static void Ms200Task(void)
 
 static void Ms100Task(void)
 {
+    uint8_t TempBuf[8];
+    TempBuf[0] = 0x11;
+    TempBuf[1] = 0x22;
+    TempBuf[2] = 0x33;
+    TempBuf[3] = 0x44;
+    TempBuf[4] = 0x55;
+    TempBuf[5] = 0x66;
+    TempBuf[6] = 0x77;
+    TempBuf[7] = 0x88;
+    // CANSPI_FD_Transmit(0x123, 0, 8, TempBuf, 1);
+    // CANSPI_FD_Transmit(0x124, 0, 8, TempBuf, 1);
+    // CANSPI_FD_Transmit(0x125, 0, 8, TempBuf, 1);
+    // CANSPI_FD_Transmit(0x126, 0, 8, TempBuf, 1);
+    // CANSPI_FD_Transmit(0x127, 0, 8, TempBuf, 1);
+    // CANSPI_FD_Transmit(0x128, 0, 8, TempBuf, 1);
+    // CANSPI_FD_Transmit(0x129, 0, 8, TempBuf, 1);
+    // CANSPI_FD_Transmit(0x323, 0, 8, TempBuf, 2);
+    // CANSPI_FD_Transmit(0x324, 0, 8, TempBuf, 2);
+    // CANSPI_FD_Transmit(0x325, 0, 8, TempBuf, 2);
+    // CANSPI_FD_Transmit(0x326, 0, 8, TempBuf, 2);
+    // CANSPI_FD_Transmit(0x327, 0, 8, TempBuf, 2);
+    // CANSPI_FD_Transmit(0x328, 0, 8, TempBuf, 2);
+    // CANSPI_FD_Transmit(0x329, 0, 8, TempBuf, 2);
     DigIo::led_out.Toggle();
     iwdg_reset();
     float cpuLoad = scheduler->GetCpuLoad() / 10.0f;
@@ -589,6 +614,23 @@ static void ControlCabHeater(int opmode)
 
 static void Ms10Task(void)
 {
+    uint8_t TempBuf_10[8];
+    TempBuf_10[0] = 0x11;
+    TempBuf_10[1] = 0x22;
+    TempBuf_10[2] = 0x33;
+    TempBuf_10[3] = 0x44;
+    TempBuf_10[4] = 0x55;
+    TempBuf_10[5] = 0x66;
+    TempBuf_10[6] = 0x77;
+    TempBuf_10[7] = 0x88;
+    // CANSPI_FD_Transmit(0x023, 0, 8, TempBuf_10, 1);
+    // CANSPI_FD_Transmit(0x024, 0, 8, TempBuf_10, 1);
+    // CANSPI_FD_Transmit(0x025, 0, 8, TempBuf_10, 1);
+    // CANSPI_FD_Transmit(0x026, 0, 8, TempBuf_10, 1);
+    // CANSPI_FD_Transmit(0x223, 0, 8, TempBuf_10, 2);
+    // CANSPI_FD_Transmit(0x224, 0, 8, TempBuf_10, 2);
+    // CANSPI_FD_Transmit(0x225, 0, 8, TempBuf_10, 2);
+    // CANSPI_FD_Transmit(0x226, 0, 8, TempBuf_10, 2);
     static uint32_t vehicleStartTime = 0;
 
     int16_t previousSpeed=Param::GetInt(Param::speed);
@@ -1349,18 +1391,42 @@ extern "C" void tim4_isr(void)
 
 extern "C" void exti15_10_isr(void)    //CAN3 MCP25625 interruppt
 {
-    uCAN_MSG rxMessage;
+    CAN20_MSG rxMessage;
     uint32_t canData[2];
-    if(CANSPI_receive(&rxMessage))
+    uint8_t TempTest8[8];
+    if(CANSPI_FD_receive(&rxMessage,1) == 1)
     {
         canData[0]=(rxMessage.frame.data0 | rxMessage.frame.data1<<8 | rxMessage.frame.data2<<16 | rxMessage.frame.data3<<24);
         canData[1]=(rxMessage.frame.data4 | rxMessage.frame.data5<<8 | rxMessage.frame.data6<<16 | rxMessage.frame.data7<<24);
     }
-    //can cast this to uint32_t[2]. dont be an idiot! * pointer
-    CANSPI_CLR_IRQ();   //Clear Rx irqs in mcp25625
     exti_reset_request(EXTI15); // clear irq
-    if((rxMessage.frame.id==0x108)||(rxMessage.frame.id==0x109)) selectedChargeInt->DecodeCAN(rxMessage.frame.id, canData);
+    if((rxMessage.frame.id==0x108)||(rxMessage.frame.id==0x109)) {selectedChargeInt->DecodeCAN(rxMessage.frame.id, canData);}
+    if(rxMessage.frame.id==0x760)
+    {
+        uint8_t* TempTest8 = (uint8_t*)canData;
+        CANSPI_FD_Transmit(0x700, 0, 8, TempTest8, 1);
+        CANSPI_FD_Transmit(0x702, 0, 8, TempTest8, 2);
+    }
+}
 
+extern "C" void exti9_5_isr(void)    //CAN3 MCP25625 interruppt
+{
+    CAN20_MSG rxMessage;
+    uint32_t canData[2];
+    uint8_t TempTest8[8];
+    if(CANSPI_FD_receive(&rxMessage,2) == 1)
+    {
+        canData[0]=(rxMessage.frame.data0 | rxMessage.frame.data1<<8 | rxMessage.frame.data2<<16 | rxMessage.frame.data3<<24);
+        canData[1]=(rxMessage.frame.data4 | rxMessage.frame.data5<<8 | rxMessage.frame.data6<<16 | rxMessage.frame.data7<<24);
+    }
+    exti_reset_request(EXTI9); // clear irq
+    if((rxMessage.frame.id==0x108)||(rxMessage.frame.id==0x109)) {selectedChargeInt->DecodeCAN(rxMessage.frame.id, canData);}
+    if(rxMessage.frame.id==0x761)
+    {
+        uint8_t* TempTest8 = (uint8_t*)canData;
+        CANSPI_FD_Transmit(0x710, 0, 8, TempTest8, 1);
+        CANSPI_FD_Transmit(0x712, 0, 8, TempTest8, 2);
+    }
 }
 
 extern "C" void rtc_isr(void)
@@ -1434,9 +1500,12 @@ extern "C" int main(void)
 
     canOBD2.SetCanInterface(canInterface[Param::GetInt(Param::OBD2Can)]);
 
-    CANSPI_Initialize();// init the MCP25625 on CAN3
-    CANSPI_ENRx_IRQ();  //init CAN3 Rx IRQ
-
+    //CANSPI_Initialize();// init the MCP25625 on CAN3
+    CANSPI_INIT_FD_CH1();
+    CANSPI_INIT_FD_CH2();
+    //CANSPI_ENRx_IRQ();  //init CAN3 Rx IRQ
+    nvic_enable_irq(NVIC_EXTI15_10_IRQ);
+    nvic_enable_irq(NVIC_EXTI9_5_IRQ);
     LinBus l(USART1, 19200);
     lin = &l;
 

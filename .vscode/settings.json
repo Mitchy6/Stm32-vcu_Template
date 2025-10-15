@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "drv_spi.h": "c",
+        "cstddef": "cpp"
+    }
+}
